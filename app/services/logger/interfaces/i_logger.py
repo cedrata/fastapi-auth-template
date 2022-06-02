@@ -1,10 +1,6 @@
 from typing import str, bool, Optional
 from zope.interface import Interface as ZInterface
 
-
-from app.services.logger.enums.level import LogLevel
-
-
 class ILogger(ZInterface):
     """
     Interface where basic logging behaviour is defined.
