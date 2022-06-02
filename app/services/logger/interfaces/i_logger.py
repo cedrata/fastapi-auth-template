@@ -29,12 +29,47 @@ class ILogger(ZInterface):
             config_file_path (str): absolute path of the configuration file.
         """
 
-    def print_log(logger_name: str, logger_level: LogLevel, message: str) -> None:
+    def debug(logger_name: str, message: str) -> None:
         """
-        Print a log statement with the specified logger with the given level.
+        Print a debug level log statement with the specified logger.
 
         Args:
             logger_name (str): the logger name to use.
-            logger_level (str): the log level to print.
+            message (str): the message to log.
+        """
+
+    def info(logger_name: str, message: str) -> None:
+        """
+        Print an info level log statement with the specified logger.
+
+        Args:
+            logger_name (str): the logger name to use.
+            message (str): the message to log.
+        """
+
+    def warning(logger_name: str, message: str) -> None:
+        """
+        Print a warning level log statement with the specified logger.
+
+        Args:
+            logger_name (str): the logger name to use.
+            message (str): the message to log.
+        """
+
+    def error(logger_name: str, message: str) -> None:
+        """
+        Print an error level log statement with the specified logger.
+
+        Args:
+            logger_name (str): the logger name to use.
+            message (str): the message to log.
+        """
+
+    def critical(logger_name: str, message: str) -> None:
+        """
+        Print critical level log statement with the specified logger.
+
+        Args:
+            logger_name (str): the logger name to use.
             message (str): the message to log.
         """

@@ -1,12 +1,12 @@
 from genericpath import exists
 from logging import getLogger
+import logging
 from logging.config import dictConfig
 from os.path import exists as os_path_exists, isfile as os_path_isfile
 from typing import List, Optional
 from yaml import safe_load
 from zope.interface import implementer as z_implementer
 
-from app.services.logger.enums.level import LogLevel
 from app.services.logger.interfaces.i_logger import ILogger
 
 
@@ -58,12 +58,73 @@ class CdrtLogger():
         with open(config_file_path, 'r') as config_file_sream:
             dictConfig(safe_load(config_file_path))
 
-    def print_log(self, logger_name: str, logger_level: LogLevel, message: str) -> None:
+
+    def debug(self, logger_name: str, message: str) -> None:
         """
-        Print a log statement with the specified logger with the given level.
+        Print a debug level log statement with the specified logger.
 
         Args:
             logger_name (str): the logger name to use.
-            logger_level (str): the log level to print.
             message (str): the message to log.
         """
+        if logger_name in self._avaiable_loggers:
+            logger = logging.getLogger(logger_name)
+            logger.debug(message)
+        else:
+            logging.debug(message)
+
+    def info(self, logger_name: str, message: str) -> None:
+        """
+        Print an info level log statement with the specified logger.
+
+        Args:
+            logger_name (str): the logger name to use.
+            message (str): the message to log.
+        """
+        if logger_name in self._avaiable_loggers:
+            logger = logging.getLogger(logger_name)
+            logger.info(message)
+        else:
+            logging.info(message)
+
+    def warning(self, logger_name: str, message: str) -> None:
+        """
+        Print a warning level log statement with the specified logger.
+
+        Args:
+            logger_name (str): the logger name to use.
+            message (str): the message to log.
+        """
+        if logger_name in self._avaiable_loggers:
+            logger = logging.getLogger(logger_name)
+            logger.warning(message)
+        else:
+            logging.warning(message)
+
+    def error(self, logger_name: str, message: str) -> None:
+        """
+        Print an error level log statement with the specified logger.
+
+        Args:
+            logger_name (str): the logger name to use.
+            message (str): the message to log.
+        """
+        if logger_name in self._avaiable_loggers:
+            logger = logging.getLogger(logger_name)
+            logger.error(message)
+        else:
+            logging.error(message)
+
+    def critical(self, logger_name: str, message: str) -> None:
+        """
+        Print critical level log statement with the specified logger.
+
+        Args:
+            logger_name (str): the logger name to use.
+            message (str): the message to log.
+        """
+        if logger_name in self._avaiable_loggers:
+            logger = logging.getLogger(logger_name)
+            logger.critical(message)
+        else:
+            logging.critical(message)
