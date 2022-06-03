@@ -1,0 +1,11 @@
+easy_log:
+  format: '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+  level: DEBUG
+  filename: easy.log
+  when: 'D'
+
+hard_log:
+  format: '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+  level: CRITICAL
+  filename: hard.log
+  when: 'D'

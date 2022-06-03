@@ -1,14 +1,20 @@
-from genericpath import exists
-from logging import getLogger
 import logging
-from logging.config import dictConfig
-from os.path import exists as os_path_exists, isfile as os_path_isfile
-from typing import List, Optional
+import sys
+from logging import getLogger
+from logging.handlers import RotatingFileHandler
+from os.path import dirname as os_path_dirname
+from os.path import exists as os_path_exists
+from os.path import isfile as os_path_isfile
+from os.path import join as os_path_join
+from typing import Dict, List, Optional
+
+from app.services.logger.enums.level import LogLevel
+from app.services.logger.interfaces.i_logger import ILogger
+from app.services.logger.models.configuration import TimedRotatingFileConfig
 from yaml import safe_load
 from zope.interface import implementer as z_implementer
 
-from app.services.logger.interfaces.i_logger import ILogger
-
+DEFAULT_LOG_FILE = os_path_join(os_path_dirname(str(sys.modules['__main__'].__file__)), "log.txt")
 
 @z_implementer(ILogger)
 class CdrtLogger():
@@ -19,6 +25,7 @@ class CdrtLogger():
 
     # Private attributes
     _avaiable_loggers: List[str]
+    _avaiable_configs: Optional[Dict[str, TimedRotatingFileConfig]] = None
 
     def __init__(self, config_file_path: Optional[str] = None) -> None:
         """
@@ -33,16 +40,27 @@ class CdrtLogger():
         if config_file_path is not None:
             self.file_config(config_file_path)
 
-    def add_logger(self, logger_name: str) -> None:
+    def add_logger(self, logger_name: str, configuration: Optional[str] = None) -> None:
         """
         Create a new logger with the given name.
 
         Args:
             logger_name (str): logger name.
+            configuration (Optional[str], optional): logging configuration to be used. Defaults to None.
         """
 
         new_logger = getLogger(logger_name)
         if new_logger.name not in self._avaiable_loggers: self._avaiable_loggers.append(new_logger.name)
+
+        if configuration is None or configuration not in self._avaiable_configs:
+            # Print log on the default log file.
+            # DEFAULT_LOG_FILE
+            ...
+        else:
+            # If the configuration exists print to
+            # the file.
+            ...
+
 
     def file_config(self, config_file_path: str) -> None:
         """
@@ -55,9 +73,17 @@ class CdrtLogger():
         if not os_path_exists(config_file_path) or not os_path_isfile(config_file_path):
             raise FileNotFoundError
 
-        with open(config_file_path, 'r') as config_file_sream:
-            dictConfig(safe_load(config_file_path))
+        # Reading all the configurations.
+        configurations = {}
+        try:
+            with open(config_file_path, 'r') as config_file_sream:
+                configurations = safe_load(config_file_sream)
+        except Exception as e:
+            print(e) 
 
+        # Adding the configurations to the avaiable configurations.
+        for k, v in configurations.items():
+            self._avaiable_configs[k] = TimedRotatingFileConfig.parse_obj(v)
 
     def debug(self, logger_name: str, message: str) -> None:
         """

@@ -1,12 +1,10 @@
-from textwrap import indent
-import pydantic
+from typing import Optional
+
+from pydantic import BaseModel
 from zope.interface import Attribute, Interface, implementer
 
-from typing import Optional
-from pydantic import BaseModel
-from pydantic.json import pydantic_encoder
-from pydantic.schema import schema
-import json
+from app.services.logger.implementations import logger
+
 
 class Mod(BaseModel):
     a: str
@@ -31,11 +29,14 @@ class Foo(object):
 
 
 if __name__=="__main__":
-    i: IFoo = Foo(4)
-    print(i.a)
+    # i: IFoo = Foo(4)
+    # print(i.a)
 
-    new_meth('a')
+    # new_meth('a')
 
-    mod_a: Mod = Mod()
+    # mod_a: Mod = Mod()
 
-    print(json.dumps(mod_a, indent=2, default=pydantic_encoder))
+    # print(json.dumps(mod_a, indent=2, default=pydantic_encoder))
+
+    logger_instance = logger.CdrtLogger("./custom_log.yaml")
+    print("ciao")

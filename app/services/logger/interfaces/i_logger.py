@@ -1,5 +1,8 @@
-from typing import str, bool, Optional
+from typing import Optional
+
+from app.services.logger.enums.level import LogLevel
 from zope.interface import Interface as ZInterface
+
 
 class ILogger(ZInterface):
     """
@@ -9,7 +12,7 @@ class ILogger(ZInterface):
         ZInterface (zope.interface.Interface): Interface class from zope.interface.
     """
 
-    def add_logger(logger_name: str) -> None:
+    def add_logger(logger_name: str, configuration: Optional[str] = None) -> None:
         """
         Create a new logger with the given name.
 
