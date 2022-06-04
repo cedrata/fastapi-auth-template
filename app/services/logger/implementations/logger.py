@@ -17,7 +17,7 @@ from zope.interface import implementer as z_implementer
 
 
 @dataclass(slots=False)
-class CdrtLoggerConstants():
+class TimedLoggerDefaults():
     @staticmethod
     def DEFAULT_LOG_FILE() -> str:
         return os_path_join(os_path_dirname(str(sys.modules['__main__'].__file__)), "log.txt")
@@ -40,11 +40,11 @@ class CdrtLoggerConstants():
 
     @staticmethod
     def DEFAULT_CONFIG_VALUE_TYPE() -> Any:
-        return type(CdrtLoggerConstants.DEFAULT_CONFIG_VALUE())
+        return type(TimedLoggerDefaults.DEFAULT_CONFIG_VALUE())
 
 
 @z_implementer(ILogger)
-class CdrtLogger():
+class TimedLogger():
     """
     Implementation of the ILogger interface using
     the already existing logging facility.
@@ -52,7 +52,7 @@ class CdrtLogger():
 
     # Private attributes.
     _avaiable_loggers: List[str] 
-    _avaiable_configs: Optional[Dict[str, TimedRotatingFileConfig | CdrtLoggerConstants.DEFAULT_CONFIG_VALUE_TYPE()]] = None
+    _avaiable_configs: Optional[Dict[str, TimedRotatingFileConfig | TimedLoggerDefaults.DEFAULT_CONFIG_VALUE_TYPE()]] = None
 
     def __init__(self, config_file_path: Optional[str] = None) -> None:
         """
@@ -65,7 +65,7 @@ class CdrtLogger():
         
         self._avaiable_loggers = []
         self._avaiable_configs = {}
-        self._avaiable_configs.setdefault(CdrtLoggerConstants.DEFAULT_CONFIG_KEY(), CdrtLoggerConstants.DEFAULT_CONFIG_VALUE())
+        self._avaiable_configs.setdefault(TimedLoggerDefaults.DEFAULT_CONFIG_KEY(), TimedLoggerDefaults.DEFAULT_CONFIG_VALUE())
         if config_file_path is not None:
             self.file_config(config_file_path)
 
@@ -105,12 +105,18 @@ class CdrtLogger():
         if new_logger.name not in self._avaiable_loggers: self._avaiable_loggers.append(new_logger.name)
 
         if configuration is None\
-            or self._avaiable_configs.get(configuration) == CdrtLoggerConstants.DEFAULT_CONFIG_VALUE():
+            or self._avaiable_configs.get(configuration) == TimedLoggerDefaults.DEFAULT_CONFIG_VALUE():
             self._apply_default_settings(new_logger)
             self._apply_default_config(new_logger)
         else:
             # If the configuration exists print to
             # the file.
+            # TODO: terminate mapping.
+            handler = TimedRotatingFileHandler(filename=self._avaiable_configs.get(configuration).filename)
+            fmt = TimedLoggerDefaults.DEFAULT_LOG_FORMAT()
+            handler.setFormatter(fmt)
+
+            new_logger.addHandler(handler)
             ...
 
     def file_config(self, config_file_path: str) -> None:
@@ -131,6 +137,7 @@ class CdrtLogger():
                 configurations = safe_load(config_file_sream)
         except Exception as e:
             print(e) 
+            sys.exit()
 
         # Adding the configurations to the avaiable configurations.
         for k, v in configurations.items():
@@ -214,7 +221,7 @@ class CdrtLogger():
         Args:
             new_logger (Logger): to set logger.
         """
-        new_logger.setLevel(self._log_level_mapper(CdrtLoggerConstants.DEFAULT_LOG_LEVEL()))
+        new_logger.setLevel(self._log_level_mapper(TimedLoggerDefaults.DEFAULT_LOG_LEVEL()))
 
     def _apply_default_config(self, new_logger: Logger) -> None:
         """
@@ -223,8 +230,8 @@ class CdrtLogger():
         Args:
             new_logger (Logger): to handle logger.
         """
-        handler = TimedRotatingFileHandler(CdrtLoggerConstants.DEFAULT_LOG_FILE())
-        fmt = CdrtLoggerConstants.DEFAULT_LOG_FORMAT()
+        handler = TimedRotatingFileHandler(TimedLoggerDefaults.DEFAULT_LOG_FILE())
+        fmt = TimedLoggerDefaults.DEFAULT_LOG_FORMAT()
         handler.setFormatter(fmt)
 
         new_logger.addHandler(handler)
