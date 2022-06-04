@@ -7,6 +7,7 @@ from os.path import dirname as os_path_dirname
 from os.path import exists as os_path_exists
 from os.path import isfile as os_path_isfile
 from os.path import join as os_path_join
+from re import I
 from typing import Any, Dict, List, Optional
 
 from app.services.logger.enums.level import LogLevel
@@ -20,7 +21,7 @@ from zope.interface import implementer as z_implementer
 class TimedLoggerDefaults():
     @staticmethod
     def DEFAULT_LOG_FILE() -> str:
-        return os_path_join(os_path_dirname(str(sys.modules['__main__'].__file__)), "log.txt")
+        return os_path_join(os_path_dirname(str(sys.modules['__main__'].__file__)), "default.log")
 
     @staticmethod
     def DEFAULT_LOG_LEVEL() -> str:
@@ -106,18 +107,9 @@ class TimedLogger():
 
         if configuration is None\
             or self._avaiable_configs.get(configuration) == TimedLoggerDefaults.DEFAULT_CONFIG_VALUE():
-            self._apply_default_settings(new_logger)
             self._apply_default_config(new_logger)
         else:
-            # If the configuration exists print to
-            # the file.
-            # TODO: terminate mapping.
-            handler = TimedRotatingFileHandler(filename=self._avaiable_configs.get(configuration).filename)
-            fmt = TimedLoggerDefaults.DEFAULT_LOG_FORMAT()
-            handler.setFormatter(fmt)
-
-            new_logger.addHandler(handler)
-            ...
+            self._apply_custom_timed_config(self._avaiable_configs.get(configuration))
 
     def file_config(self, config_file_path: str) -> None:
         """
@@ -213,25 +205,42 @@ class TimedLogger():
         else:
             logging.critical(message)
 
-    # Prinvate methods.
-    def _apply_default_settings(self, new_logger: Logger) -> None:
-        """
-        Apply the default settings to the given logger.
-
-        Args:
-            new_logger (Logger): to set logger.
-        """
-        new_logger.setLevel(self._log_level_mapper(TimedLoggerDefaults.DEFAULT_LOG_LEVEL()))
-
+    # Private methods.
     def _apply_default_config(self, new_logger: Logger) -> None:
         """
-        Apply a default handler to the given logger.
+        Apply a default configuration to the given logger.
 
         Args:
             new_logger (Logger): to handle logger.
         """
+        new_logger.setLevel(self._log_level_mapper(TimedLoggerDefaults.DEFAULT_LOG_LEVEL()))
         handler = TimedRotatingFileHandler(TimedLoggerDefaults.DEFAULT_LOG_FILE())
         fmt = TimedLoggerDefaults.DEFAULT_LOG_FORMAT()
+        handler.setFormatter(fmt)
+
+        new_logger.addHandler(handler)
+
+    def _apply_custom_timed_config(self, new_logger: Logger, config: TimedRotatingFileConfig) -> None:
+        """
+        Apply a custom configuration to the given logger.
+
+        Args:
+            new_logger (Logger): logger to configure.
+            config (TimedRotatingFileConfig): logger configurations.
+        """
+        new_logger.setLevel(self._log_level_mapper(config.level))
+        handler = TimedRotatingFileHandler(
+            config.filename,
+            config.when,
+            config.interval,
+            config.backup_count,
+            config.encoding,
+            config.delay,
+            config.utc,
+            config.atTime,
+            config.errors
+        )
+        fmt = logging.Formatter(config.format)
         handler.setFormatter(fmt)
 
         new_logger.addHandler(handler)

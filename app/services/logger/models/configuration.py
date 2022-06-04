@@ -24,5 +24,5 @@ class TimedRotatingFileConfig(BaseFileLogConfig):
     encoding: Optional[str] = None
     delay: Optional[bool] = False
     utc: Optional[bool] = False
-    atTime: Optional[bool] = False
-    errors: Optional[bool] = False 
+    atTime: Optional[bool] = None
+    errors: Optional[bool] = None 
