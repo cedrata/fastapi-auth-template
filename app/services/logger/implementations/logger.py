@@ -1,12 +1,13 @@
 import logging
 import sys
-from logging import getLogger
-from logging.handlers import RotatingFileHandler
+from dataclasses import dataclass
+from logging import Logger, getLogger
+from logging.handlers import TimedRotatingFileHandler
 from os.path import dirname as os_path_dirname
 from os.path import exists as os_path_exists
 from os.path import isfile as os_path_isfile
 from os.path import join as os_path_join
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 from app.services.logger.enums.level import LogLevel
 from app.services.logger.interfaces.i_logger import ILogger
@@ -14,7 +15,33 @@ from app.services.logger.models.configuration import TimedRotatingFileConfig
 from yaml import safe_load
 from zope.interface import implementer as z_implementer
 
-DEFAULT_LOG_FILE = os_path_join(os_path_dirname(str(sys.modules['__main__'].__file__)), "log.txt")
+
+@dataclass(slots=False)
+class CdrtLoggerConstants():
+    @staticmethod
+    def DEFAULT_LOG_FILE() -> str:
+        return os_path_join(os_path_dirname(str(sys.modules['__main__'].__file__)), "log.txt")
+
+    @staticmethod
+    def DEFAULT_LOG_LEVEL() -> str:
+        return LogLevel.DEBUG
+
+    @staticmethod
+    def DEFAULT_LOG_FORMAT() -> str:
+        return logging.Formatter('%(levelname)s-%(message)s')
+
+    @staticmethod
+    def DEFAULT_CONFIG_KEY() -> str:
+        return 'default'
+
+    @staticmethod
+    def DEFAULT_CONFIG_VALUE() -> Any:
+        return None
+
+    @staticmethod
+    def DEFAULT_CONFIG_VALUE_TYPE() -> Any:
+        return type(CdrtLoggerConstants.DEFAULT_CONFIG_VALUE())
+
 
 @z_implementer(ILogger)
 class CdrtLogger():
@@ -23,9 +50,9 @@ class CdrtLogger():
     the already existing logging facility.
     """
 
-    # Private attributes
-    _avaiable_loggers: List[str]
-    _avaiable_configs: Optional[Dict[str, TimedRotatingFileConfig]] = None
+    # Private attributes.
+    _avaiable_loggers: List[str] 
+    _avaiable_configs: Optional[Dict[str, TimedRotatingFileConfig | CdrtLoggerConstants.DEFAULT_CONFIG_VALUE_TYPE()]] = None
 
     def __init__(self, config_file_path: Optional[str] = None) -> None:
         """
@@ -37,9 +64,34 @@ class CdrtLogger():
         """
         
         self._avaiable_loggers = []
+        self._avaiable_configs = {}
+        self._avaiable_configs.setdefault(CdrtLoggerConstants.DEFAULT_CONFIG_KEY(), CdrtLoggerConstants.DEFAULT_CONFIG_VALUE())
         if config_file_path is not None:
             self.file_config(config_file_path)
 
+    @staticmethod
+    def _log_level_mapper(log_level: LogLevel) -> int:
+        """
+        Parse the LogLevel enum to the logging default enum.
+
+        Args:
+            log_level (LogLevel): log level to parse.
+        """
+        match log_level:
+            case LogLevel.NOTSET:
+                return logging.NOTSET
+            case LogLevel.DEBUG:
+                return logging.DEBUG
+            case LogLevel.INFO:
+                return logging.INFO
+            case LogLevel.WARNING:
+                return logging.WARNING
+            case LogLevel.ERROR:
+                return logging.ERROR
+            case LogLevel.CRITICAL:
+                return logging.CRITICAL
+
+    #ILogger methods.
     def add_logger(self, logger_name: str, configuration: Optional[str] = None) -> None:
         """
         Create a new logger with the given name.
@@ -52,15 +104,14 @@ class CdrtLogger():
         new_logger = getLogger(logger_name)
         if new_logger.name not in self._avaiable_loggers: self._avaiable_loggers.append(new_logger.name)
 
-        if configuration is None or configuration not in self._avaiable_configs:
-            # Print log on the default log file.
-            # DEFAULT_LOG_FILE
-            ...
+        if configuration is None\
+            or self._avaiable_configs.get(configuration) == CdrtLoggerConstants.DEFAULT_CONFIG_VALUE():
+            self._apply_default_settings(new_logger)
+            self._apply_default_config(new_logger)
         else:
             # If the configuration exists print to
             # the file.
             ...
-
 
     def file_config(self, config_file_path: str) -> None:
         """
@@ -154,3 +205,26 @@ class CdrtLogger():
             logger.critical(message)
         else:
             logging.critical(message)
+
+    # Prinvate methods.
+    def _apply_default_settings(self, new_logger: Logger) -> None:
+        """
+        Apply the default settings to the given logger.
+
+        Args:
+            new_logger (Logger): to set logger.
+        """
+        new_logger.setLevel(self._log_level_mapper(CdrtLoggerConstants.DEFAULT_LOG_LEVEL()))
+
+    def _apply_default_config(self, new_logger: Logger) -> None:
+        """
+        Apply a default handler to the given logger.
+
+        Args:
+            new_logger (Logger): to handle logger.
+        """
+        handler = TimedRotatingFileHandler(CdrtLoggerConstants.DEFAULT_LOG_FILE())
+        fmt = CdrtLoggerConstants.DEFAULT_LOG_FORMAT()
+        handler.setFormatter(fmt)
+
+        new_logger.addHandler(handler)

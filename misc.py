@@ -38,5 +38,9 @@ if __name__=="__main__":
 
     # print(json.dumps(mod_a, indent=2, default=pydantic_encoder))
 
-    logger_instance = logger.CdrtLogger("./custom_log.yaml")
-    print("ciao")
+    # logger_instance = logger.CdrtLogger("./custom_log.yaml")
+    logger_instance = logger.CdrtLogger()
+    logger_instance.add_logger(logger_name="pippo")
+    logger_instance.info("pippo", "A simple log")
+    logger_instance.add_logger(logger_name="easy log", configuration="hard_log")
+    logger_instance.critical("easy log", "critical message")
