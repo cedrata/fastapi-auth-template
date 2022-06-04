@@ -15,7 +15,7 @@ class BaseFileLogConfig(BaseLogConfig):
     # printed for the given configuration.
     filename: str
 
-class TimedRotatingFileConfig(BaseLogConfig):
+class TimedRotatingFileConfig(BaseFileLogConfig):
     # Check the python logging.handler.TimedRotatingFileHandler
     # documentation to know about each attribute.
     when: Optional[str] = None
@@ -25,5 +25,4 @@ class TimedRotatingFileConfig(BaseLogConfig):
     delay: Optional[bool] = False
     utc: Optional[bool] = False
     atTime: Optional[bool] = False
-    errors: Optional[bool] = False
-    
+    errors: Optional[bool] = False 
