@@ -1,7 +1,9 @@
 from fastapi import APIRouter
 
+from app.models.core import SimpleMessage
+
 router = APIRouter()
 
-@router.get("/")
+@router.get("/", response_model=SimpleMessage)
 async def root():
-    return {"Hello, world! (From router)"}
+    return SimpleMessage(message="Hello, world! (Simple message type)")
