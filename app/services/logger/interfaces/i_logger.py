@@ -1,15 +1,9 @@
-from typing import Optional
-
-from app.services.logger.enums.level import LogLevel
-from zope.interface import Interface as ZInterface
+from typing import Optional, Protocol
 
 
-class ILogger(ZInterface):
+class ILogger(Protocol):
     """
     Interface where basic logging behaviour is defined.
-
-    Args:
-        ZInterface (zope.interface.Interface): Interface class from zope.interface.
     """
 
     def add_logger(logger_name: str, configuration: Optional[str] = None) -> None:

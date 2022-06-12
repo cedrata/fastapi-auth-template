@@ -14,7 +14,6 @@ from app.services.logger.enums.level import LogLevel
 from app.services.logger.interfaces.i_logger import ILogger
 from app.services.logger.models.configuration import TimedRotatingFileConfig
 from yaml import safe_load
-from zope.interface import implementer as z_implementer
 
 
 @dataclass(slots=False)
@@ -44,7 +43,6 @@ class TimedLoggerDefaults():
         return type(TimedLoggerDefaults.DEFAULT_CONFIG_VALUE())
 
 
-@z_implementer(ILogger)
 class TimedLogger():
     """
     Implementation of the ILogger interface using
@@ -109,7 +107,7 @@ class TimedLogger():
             or self._avaiable_configs.get(configuration) == TimedLoggerDefaults.DEFAULT_CONFIG_VALUE():
             self._apply_default_config(new_logger)
         else:
-            self._apply_custom_timed_config(self._avaiable_configs.get(configuration))
+            self._apply_custom_timed_config(new_logger, self._avaiable_configs.get(configuration))
 
     def file_config(self, config_file_path: str) -> None:
         """

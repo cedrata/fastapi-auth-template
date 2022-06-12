@@ -1,9 +1,10 @@
+import logging
 from typing import Optional
 
 from pydantic import BaseModel
-from zope.interface import Attribute, Interface, implementer
 
 from app.services.logger.implementations import logger
+from app.services.logger.interfaces.i_logger import ILogger
 
 
 class Mod(BaseModel):
@@ -13,20 +14,8 @@ class Mod(BaseModel):
 def new_meth(para: Optional[str] = None) -> None:
     print(para)
 
-
-class IFoo(Interface):
-    a = Attribute("attribute a")
-
-@implementer(IFoo)
-class Foo(object):
-
-    def __init__(self, a):
-        self._a = a
-
-    @property
-    def a(self):
-        return self._a
-
+def pippo(lg: ILogger):
+    lg.critical('hard_log', 'from function pippo')
 
 if __name__=="__main__":
     # i: IFoo = Foo(4)
@@ -44,3 +33,4 @@ if __name__=="__main__":
     logger_instance.info("pippo", "A simple log")
     logger_instance.add_logger(logger_name="hard_log", configuration="hard_log")
     logger_instance.critical("hard_log", "critical message")
+    pippo(logger_instance)
