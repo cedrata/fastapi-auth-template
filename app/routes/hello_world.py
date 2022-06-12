@@ -1,6 +1,5 @@
-from fastapi import APIRouter
-
 from app.models.core import SimpleMessage
+from fastapi import APIRouter
 
 router = APIRouter()
 
