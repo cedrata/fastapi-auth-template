@@ -1,1 +1,0 @@
-# Implementing DI with opyoid module
