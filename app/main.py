@@ -4,6 +4,7 @@ from fastapi import FastAPI
 
 from app.routes.hello_world import router as hello_world_router
 
+# Move to config file.
 reoutes_prefix: Final[str] = "/cdrt"
 
 app = FastAPI()
