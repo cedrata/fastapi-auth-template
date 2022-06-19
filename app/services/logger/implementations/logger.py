@@ -1,6 +1,7 @@
 import logging
 import sys
 from dataclasses import dataclass
+from distutils.log import Log
 from logging import Logger, getLogger
 from logging.handlers import TimedRotatingFileHandler
 from os.path import dirname as os_path_dirname
@@ -8,39 +9,20 @@ from os.path import exists as os_path_exists
 from os.path import isfile as os_path_isfile
 from os.path import join as os_path_join
 from re import I
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Final, List, Optional
 
 from app.services.logger.enums.level import LogLevel
 from app.services.logger.interfaces.i_logger import ILogger
 from app.services.logger.models.configuration import TimedRotatingFileConfig
 from yaml import safe_load
 
-
-@dataclass(slots=False)
-class TimedLoggerDefaults():
-    @staticmethod
-    def DEFAULT_LOG_FILE() -> str:
-        return os_path_join(os_path_dirname(str(sys.modules['__main__'].__file__)), "default.log")
-
-    @staticmethod
-    def DEFAULT_LOG_LEVEL() -> str:
-        return LogLevel.DEBUG
-
-    @staticmethod
-    def DEFAULT_LOG_FORMAT() -> str:
-        return logging.Formatter('%(levelname)s-%(message)s')
-
-    @staticmethod
-    def DEFAULT_CONFIG_KEY() -> str:
-        return 'default'
-
-    @staticmethod
-    def DEFAULT_CONFIG_VALUE() -> Any:
-        return None
-
-    @staticmethod
-    def DEFAULT_CONFIG_VALUE_TYPE() -> Any:
-        return type(TimedLoggerDefaults.DEFAULT_CONFIG_VALUE())
+DEFAULT_LOG_FILE: Final[str] = os_path_join(os_path_dirname(
+    str(sys.modules['__main__'].__file__)), "default.log")
+DEFAULT_LOG_LEVEL: Final[str] = LogLevel.DEBUG
+DEFAULT_LOG_FORMAT: Final[str] = logging.Formatter('%(levelname)s-%(message)s')
+DEFAULT_CONFIG_KEY: Final[str] = 'default'
+DEFAULT_CONFIG_VALUE: Final[str] = None
+DEFAULT_CONFIG_VALUE_TYPE: Final[str] = type(DEFAULT_CONFIG_VALUE)
 
 
 class TimedLogger():
@@ -50,8 +32,9 @@ class TimedLogger():
     """
 
     # Private attributes.
-    _avaiable_loggers: List[str] 
-    _avaiable_configs: Optional[Dict[str, TimedRotatingFileConfig | TimedLoggerDefaults.DEFAULT_CONFIG_VALUE_TYPE()]] = None
+    _avaiable_loggers: List[str]
+    _avaiable_configs: Optional[Dict[str, TimedRotatingFileConfig |
+                                     DEFAULT_CONFIG_VALUE_TYPE()]] = None
 
     def __init__(self, config_file_path: Optional[str] = None) -> None:
         """
@@ -61,10 +44,11 @@ class TimedLogger():
         Args:
             config_file_path (Optional[str], optional): _description_. Defaults to None.
         """
-        
+
         self._avaiable_loggers = []
         self._avaiable_configs = {}
-        self._avaiable_configs.setdefault(TimedLoggerDefaults.DEFAULT_CONFIG_KEY(), TimedLoggerDefaults.DEFAULT_CONFIG_VALUE())
+        self._avaiable_configs.setdefault(
+            DEFAULT_CONFIG_KEY(), DEFAULT_CONFIG_VALUE())
         if config_file_path is not None:
             self.file_config(config_file_path)
 
@@ -90,7 +74,7 @@ class TimedLogger():
             case LogLevel.CRITICAL:
                 return logging.CRITICAL
 
-    #ILogger methods.
+    # ILogger methods.
     def add_logger(self, logger_name: str, configuration: Optional[str] = None) -> None:
         """
         Create a new logger with the given name.
@@ -101,13 +85,15 @@ class TimedLogger():
         """
 
         new_logger = getLogger(logger_name)
-        if new_logger.name not in self._avaiable_loggers: self._avaiable_loggers.append(new_logger.name)
+        if new_logger.name not in self._avaiable_loggers:
+            self._avaiable_loggers.append(new_logger.name)
 
         if configuration is None\
-            or self._avaiable_configs.get(configuration) == TimedLoggerDefaults.DEFAULT_CONFIG_VALUE():
+                or self._avaiable_configs.get(configuration) == DEFAULT_CONFIG_VALUE():
             self._apply_default_config(new_logger)
         else:
-            self._apply_custom_timed_config(new_logger, self._avaiable_configs.get(configuration))
+            self._apply_custom_timed_config(
+                new_logger, self._avaiable_configs.get(configuration))
 
     def file_config(self, config_file_path: str) -> None:
         """
@@ -126,7 +112,7 @@ class TimedLogger():
             with open(config_file_path, 'r') as config_file_sream:
                 configurations = safe_load(config_file_sream)
         except Exception as e:
-            print(e) 
+            print(e)
             sys.exit()
 
         # Adding the configurations to the avaiable configurations.
@@ -211,9 +197,9 @@ class TimedLogger():
         Args:
             new_logger (Logger): to handle logger.
         """
-        new_logger.setLevel(self._log_level_mapper(TimedLoggerDefaults.DEFAULT_LOG_LEVEL()))
-        handler = TimedRotatingFileHandler(TimedLoggerDefaults.DEFAULT_LOG_FILE())
-        fmt = TimedLoggerDefaults.DEFAULT_LOG_FORMAT()
+        new_logger.setLevel(self._log_level_mapper(DEFAULT_LOG_LEVEL()))
+        handler = TimedRotatingFileHandler(DEFAULT_LOG_FILE())
+        fmt = DEFAULT_LOG_FORMAT()
         handler.setFormatter(fmt)
 
         new_logger.addHandler(handler)
