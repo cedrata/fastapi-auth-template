@@ -34,7 +34,7 @@ class TimedLogger():
     # Private attributes.
     _avaiable_loggers: List[str]
     _avaiable_configs: Optional[Dict[str, TimedRotatingFileConfig |
-                                     DEFAULT_CONFIG_VALUE_TYPE()]] = None
+                                     DEFAULT_CONFIG_VALUE_TYPE]] = None
 
     def __init__(self, config_file_path: Optional[str] = None) -> None:
         """
@@ -48,7 +48,7 @@ class TimedLogger():
         self._avaiable_loggers = []
         self._avaiable_configs = {}
         self._avaiable_configs.setdefault(
-            DEFAULT_CONFIG_KEY(), DEFAULT_CONFIG_VALUE())
+            DEFAULT_CONFIG_KEY, DEFAULT_CONFIG_VALUE)
         if config_file_path is not None:
             self.file_config(config_file_path)
 
@@ -89,7 +89,7 @@ class TimedLogger():
             self._avaiable_loggers.append(new_logger.name)
 
         if configuration is None\
-                or self._avaiable_configs.get(configuration) == DEFAULT_CONFIG_VALUE():
+                or self._avaiable_configs.get(configuration) == DEFAULT_CONFIG_VALUE:
             self._apply_default_config(new_logger)
         else:
             self._apply_custom_timed_config(
@@ -197,9 +197,9 @@ class TimedLogger():
         Args:
             new_logger (Logger): to handle logger.
         """
-        new_logger.setLevel(self._log_level_mapper(DEFAULT_LOG_LEVEL()))
-        handler = TimedRotatingFileHandler(DEFAULT_LOG_FILE())
-        fmt = DEFAULT_LOG_FORMAT()
+        new_logger.setLevel(self._log_level_mapper(DEFAULT_LOG_LEVEL))
+        handler = TimedRotatingFileHandler(DEFAULT_LOG_FILE)
+        fmt = DEFAULT_LOG_FORMAT
         handler.setFormatter(fmt)
 
         new_logger.addHandler(handler)
