@@ -1,6 +1,7 @@
-from typing import Optional, Protocol
+from typing import Optional, Protocol, runtime_checkable
 
 
+@runtime_checkable
 class ILogger(Protocol):
     """
     Interface where basic logging behaviour is defined.

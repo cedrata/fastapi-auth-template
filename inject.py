@@ -1,5 +1,7 @@
 from injector import Module, Injector, inject, singleton, provider
 import sqlite3
+from app.services.logger.implementations.logger import TimedLogger
+from app.services.logger.interfaces.i_logger import ILogger
 
 import injector
 
@@ -23,6 +25,8 @@ class Configuration:
 def configure_for_testing(binder):
     configuration = Configuration(':memory:')
     binder.bind(Configuration, to=configuration, scope=singleton)
+    logg = TimedLogger()
+    binder.bind(ILogger, to=logg, scope=singleton)
 
 
 class DatabaseModule(Module):
@@ -38,5 +42,7 @@ class DatabaseModule(Module):
 
 if __name__ == "__main__":
     inj = Injector([configure_for_testing, DatabaseModule()])
-    handler = inj.get(RequestHandler)
-    print(tuple(map(str, handler.get()[0])))
+    # handler = inj.get(RequestHandler)
+    # print(tuple(map(str, handler.get()[0])))
+    handler = inj.get(ILogger)
+    print("Done")
