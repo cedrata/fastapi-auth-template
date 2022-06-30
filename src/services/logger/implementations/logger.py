@@ -11,9 +11,9 @@ from os.path import join as os_path_join
 from re import I
 from typing import Any, Dict, Final, List, Optional
 
-from app.services.logger.enums.level import LogLevel
-from app.services.logger.interfaces.i_logger import ILogger
-from app.services.logger.models.configuration import TimedRotatingFileConfig
+from src.services.logger.enums.level import LogLevel
+from src.services.logger.interfaces.i_logger import ILogger
+from src.services.logger.models.configuration import TimedRotatingFileConfig
 from yaml import safe_load
 
 DEFAULT_LOG_FILE: Final[str] = os_path_join(os_path_dirname(

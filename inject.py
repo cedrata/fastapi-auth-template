@@ -1,7 +1,7 @@
 from injector import Module, Injector, inject, singleton, provider
 import sqlite3
-from app.services.logger.implementations.logger import TimedLogger
-from app.services.logger.interfaces.i_logger import ILogger
+from src.services.logger.implementations.logger import TimedLogger
+from src.services.logger.interfaces.i_logger import ILogger
 
 import injector
 

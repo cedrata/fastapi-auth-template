@@ -1,6 +1,6 @@
 from typing import Optional
 
-from app.services.logger.enums.level import LogLevel
+from src.services.logger.enums.level import LogLevel
 from pydantic import BaseModel
 
 
