@@ -1,4 +1,5 @@
-from injector import Binder, singleton
+from typing import Final
+from injector import Binder, Injector, singleton
 from src.services.logger.implementations.logger import TimedLogger
 
 from src.services.logger.interfaces.i_logger import ILogger
@@ -15,7 +16,7 @@ def resolve(binder: Binder) -> None:
     """
 
     # Singletons instantiations
-    binder.bind(ILogger, to=TimedLogger(), scope=singleton)
+    logg = TimedLogger()
+    binder.bind(ILogger, to=logg, scope=singleton)
 
-
-# container = Injector([])
+CONTAINER: Final[Injector] = Injector([resolve])
