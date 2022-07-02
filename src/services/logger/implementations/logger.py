@@ -1,18 +1,14 @@
 import logging
 import sys
-from dataclasses import dataclass
-from distutils.log import Log
 from logging import Logger, getLogger
 from logging.handlers import TimedRotatingFileHandler
 from os.path import dirname as os_path_dirname
 from os.path import exists as os_path_exists
 from os.path import isfile as os_path_isfile
 from os.path import join as os_path_join
-from re import I
-from typing import Any, Dict, Final, List, Optional
+from typing import Dict, Final, List, Optional
 
 from src.services.logger.enums.level import LogLevel
-from src.services.logger.interfaces.i_logger import ILogger
 from src.services.logger.models.configuration import TimedRotatingFileConfig
 from yaml import safe_load
 

@@ -1,7 +1,7 @@
 from typing import Optional
 
-from src.services.logger.enums.level import LogLevel
 from pydantic import BaseModel
+from src.services.logger.enums.level import LogLevel
 
 
 class BaseLogConfig(BaseModel):
@@ -10,10 +10,12 @@ class BaseLogConfig(BaseModel):
     format: str
     level: Optional[LogLevel] = LogLevel.NOTSET
 
+
 class BaseFileLogConfig(BaseLogConfig):
     # The log file name where the output will be
     # printed for the given configuration.
     filename: str
+
 
 class TimedRotatingFileConfig(BaseFileLogConfig):
     # Check the python logging.handler.TimedRotatingFileHandler
@@ -25,4 +27,4 @@ class TimedRotatingFileConfig(BaseFileLogConfig):
     delay: Optional[bool] = False
     utc: Optional[bool] = False
     atTime: Optional[bool] = None
-    errors: Optional[bool] = None 
+    errors: Optional[bool] = None
