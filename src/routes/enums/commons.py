@@ -1,5 +1,6 @@
 from enum import Enum, auto
 
+
 class Endpoint(Enum):
     RESPONSE_MODEL = auto()
     STATUS_CODE = auto()
@@ -23,4 +24,3 @@ class Endpoint(Enum):
     CALLBACKS = auto()
     OPENAPI_EXTRA = auto()
     GENERATE_UNIQUE_ID_FUNCTION = auto()
-
