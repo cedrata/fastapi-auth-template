@@ -1,24 +1,25 @@
 from typing import Any, Dict, Final
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 
 # from src.helpers.container import CONTAINER
 # from typing import Any
 from fastapi.security import OAuth2PasswordRequestForm
+from src.mock.fake_db import DB_USERS
+from src.models.auth import AuthMessage
 
 # from src.mock.fake_db import DB_USERS
-from src.models.commons import BaseMessage
-from src.models.auth import AuthMessage
 from src.routes.enums.commons import Endpoint
+from src.services.auth import OAUTH2_SCHEME
 
 # Constant initialization.
 _LOGIN_POST_PARAMS: Final[Dict[Endpoint, Any]] = {
     Endpoint.RESPONSE_MODEL: AuthMessage,
     Endpoint.RESPONSES: {
-        status.HTTP_403_FORBIDDEN: {
-            "model": BaseMessage,
+        status.HTTP_401_UNAUTHORIZED: {
+            # "model": Any if required (not valid to isert http exception here)
             "description": "Unsuccesful login, wrong email or password",
         }
     },
@@ -35,24 +36,18 @@ router = APIRouter()
     responses=_LOGIN_POST_PARAMS[Endpoint.RESPONSES],
     description=_LOGIN_POST_PARAMS[Endpoint.DESCRIPTION],
 )
-# @router.post("/login")
 async def login(request_form: OAuth2PasswordRequestForm = Depends()):
-    # Search if user exists in DB. If not throw error.
-    # Search if pwd match. If not return HTTPEception.
-    # If user exists and pwd match return:
-    #   - Status code.
-    #   - AccessToken.
-    #   - RefreshToken.
-    pippo = True
     response: Any
     status_code: int
-    if not pippo:
-        response = BaseMessage(message="Authorization failed")
-        status_code = status.HTTP_403_FORBIDDEN
-    else:
-        response = AuthMessage(
-            access_token="access token", refresh_token="refresh token"
-        )
-        status_code = status.HTTP_200_OK
+
+    error_message = "Invalid username or password"
+    # Search if user exists in DB.
+    # The user does not exists.
+    if not request_form.username in DB_USERS.keys():
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, detail=error_message)
+
+    # The user exists.
+    response = AuthMessage(access_token="success", refresh_token="success")
+    status_code = status.HTTP_200_OK
 
     return JSONResponse(status_code=status_code, content=jsonable_encoder(response))
