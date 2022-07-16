@@ -46,8 +46,12 @@ async def login(request_form: OAuth2PasswordRequestForm = Depends()):
     if not request_form.username in DB_USERS.keys():
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, detail=error_message)
 
+    # Check if the input password match the stored one.
+    if DB_USERS[request_form.username]["password"] != request_form.password:
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, detail=error_message)
+
     # The user exists.
-    response = AuthMessage(access_token="success", refresh_token="success")
+    response = AuthMessage(access_token="success", refresh_token="success", token_type="bearer")
     status_code = status.HTTP_200_OK
 
     return JSONResponse(status_code=status_code, content=jsonable_encoder(response))
