@@ -1,5 +1,6 @@
 from typing import Any, Dict, Final
 
+from src.core import auth
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
@@ -44,8 +45,9 @@ async def login(request_form: OAuth2PasswordRequestForm = Depends()):
     if not request_form.username in DB_USERS.keys():
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, detail=error_message)
 
-    # Check if the input password match the stored one.
-    if DB_USERS[request_form.username]["password"] != request_form.password:
+    # Check if the input password match the stored one,
+    # but before doing so the password to check must be hashed, and then compared.
+    if DB_USERS[request_form.username]["password"] != auth.hash_password(request_form.password):
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, detail=error_message)
 
     # The user exists.
