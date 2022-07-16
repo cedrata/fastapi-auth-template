@@ -1,7 +1,7 @@
 from fastapi import APIRouter, status, Depends
 from src.helpers.container import CONTAINER
 from src.models.commons import BaseMessage
-from src.services.auth import OAUTH2_SCHEME
+from src.core.auth import OAUTH2_SCHEME
 from src.services.logger.interfaces.i_logger import ILogger
 
 router = APIRouter()
