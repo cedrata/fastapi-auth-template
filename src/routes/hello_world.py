@@ -1,6 +1,7 @@
-from fastapi import APIRouter, status
+from fastapi import APIRouter, status, Depends
 from src.helpers.container import CONTAINER
 from src.models.commons import BaseMessage
+from src.services.auth import OAUTH2_SCHEME
 from src.services.logger.interfaces.i_logger import ILogger
 
 router = APIRouter()
@@ -11,3 +12,7 @@ async def root():
     log = CONTAINER.get(ILogger)
     log.info("some", "Hello world")
     return BaseMessage(message="Hello, world! (Simple message type)")
+
+@router.get("/test-auth")
+async def test_auth(token: str = Depends(OAUTH2_SCHEME)):
+    return {"token": token}
