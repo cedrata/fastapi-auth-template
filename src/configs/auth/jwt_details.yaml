@@ -1,0 +1,3 @@
+algorithm: "HS256"
+access_expiration: 5 # In minutes
+refresh_expiration: 15 # In minutes

@@ -1,17 +1,37 @@
+from os import environ as os_environ
+from re import I
+import sys
 from typing import Any, Dict, Final
 
-from src.core import auth
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
-
-# from src.helpers.container import CONTAINER
 from fastapi.security import OAuth2PasswordRequestForm
+from src.core import auth
 from src.mock.fake_db import DB_USERS
 from src.models.auth import AuthMessage
 from src.models.commons import HttpExceptionMessage
-
 from src.routes.enums.commons import Endpoint
+from yaml import safe_load
+from src.helpers.container import CONTAINER
+from src.services.logger.interfaces.i_logger import ILogger
+from os import environ
+from os.path import join
+
+
+# Get the config file path
+
+# Read configuration file for jwt configuration.
+
+_JWT_CONFIG: Final[Dict[str, Any]]
+try:
+    config_file_path = join(environ['CONFIGS_DIR'], "auth", "jwt_details.yaml")
+    with open(config_file_path) as config_file_stream:
+        _JWT_CONFIG = safe_load(config_file_stream)
+except Exception as e:
+    logger = CONTAINER.get(ILogger)
+    logger.critical('errors', f"An error occured while reading the configuration file in {__file__}")
+    sys.exit()
 
 # Constant initialization.
 _LOGIN_POST_PARAMS: Final[Dict[Endpoint, Any]] = {
@@ -47,7 +67,9 @@ async def login(request_form: OAuth2PasswordRequestForm = Depends()):
 
     # Check if the input password match the stored one,
     # but before doing so the password to check must be hashed, and then compared.
-    if DB_USERS[request_form.username]["password"] != auth.hash_password(request_form.password):
+    if DB_USERS[request_form.username]["password"] != auth.hash_password(
+        request_form.password
+    ):
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, detail=error_message)
 
     # The user exists.
