@@ -1,6 +1,6 @@
-from os import environ as os_environ
-from re import I
 import sys
+from os import environ
+from os.path import join
 from typing import Any, Dict, Final
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -8,29 +8,26 @@ from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from src.core import auth
+from src.helpers.container import CONTAINER
 from src.mock.fake_db import DB_USERS
 from src.models.auth import AuthMessage
 from src.models.commons import HttpExceptionMessage
 from src.routes.enums.commons import Endpoint
-from yaml import safe_load
-from src.helpers.container import CONTAINER
 from src.services.logger.interfaces.i_logger import ILogger
-from os import environ
-from os.path import join
-
-
-# Get the config file path
+from yaml import safe_load
 
 # Read configuration file for jwt configuration.
 
 _JWT_CONFIG: Final[Dict[str, Any]]
 try:
-    config_file_path = join(environ['CONFIGS_DIR'], "auth", "jwt_details.yaml")
+    config_file_path = join(environ["CONFIGS_DIR"], "auth", "jwt_details.yaml")
     with open(config_file_path) as config_file_stream:
         _JWT_CONFIG = safe_load(config_file_stream)
 except Exception as e:
     logger = CONTAINER.get(ILogger)
-    logger.critical('errors', f"An error occured while reading the configuration file in {__file__}")
+    logger.critical(
+        "errors", f"An error occured while reading the configuration file in {__file__}"
+    )
     sys.exit()
 
 # Constant initialization.
