@@ -54,8 +54,11 @@ async def login(request_form: OAuth2PasswordRequestForm = Depends()):
 
     # Check if the input password match the stored one,
     # but before doing so the password to check must be hashed, and then compared.
-    if DB_USERS[request_form.username]["password"] != auth.hash_password(
-        request_form.password
+    # if DB_USERS[request_form.username]["password"] != auth.hash_password(
+    #     request_form.password
+    # ):
+    if not auth.verify_password(
+        request_form.password, DB_USERS[request_form.username]["password"]
     ):
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, detail=error_message)
 

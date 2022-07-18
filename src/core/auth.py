@@ -6,8 +6,9 @@ from typing import Any, Dict, Final
 
 from fastapi.security import OAuth2PasswordBearer
 from jose import jwt
-from src.services.logger.interfaces.i_logger import ILogger
+from passlib.context import CryptContext
 from src.helpers.container import CONTAINER
+from src.services.logger.interfaces.i_logger import ILogger
 from yaml import safe_load
 
 # This is instance will be injected in routes when those have to be secured.
@@ -16,13 +17,14 @@ from yaml import safe_load
 #
 # The tokenUrl is not inserted in any configuration file because it should not change in time,
 # by doing so it encourages keep the same endpoint as the login one.
-OAUTH2_SCHEME: Final[OAuth2PasswordBearer] = OAuth2PasswordBearer(
+OAUTH2_SCHEME: Final = OAuth2PasswordBearer(
     tokenUrl="/auth/login",
 )
 
+_PWD_CONTEX: Final = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
 
 # Read configuration file for jwt configuration.
-
 JWT_CONFIG: Final[Dict[str, Any]]
 try:
     config_file_path = join(environ["CONFIGS_DIR"], "auth", "jwt_details.yaml")
@@ -38,8 +40,11 @@ except Exception as e:
 
 def hash_password(password: str) -> str:
     """Returning the given password with hash."""
-    # TODO: Implement password hashing.
-    return password
+    return _PWD_CONTEX.hash(password)
+
+
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    return _PWD_CONTEX.verify(plain_password, hashed_password)
 
 
 def create_token(
