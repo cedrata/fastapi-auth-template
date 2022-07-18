@@ -1,8 +1,11 @@
+from os import environ
 from fastapi import APIRouter, status, Depends
+from jose import JWTError
 from src.helpers.container import CONTAINER
 from src.models.commons import BaseMessage
 from src.core.auth import OAUTH2_SCHEME
 from src.services.logger.interfaces.i_logger import ILogger
+from jose import jwt
 
 router = APIRouter()
 
@@ -15,4 +18,4 @@ async def root():
 
 @router.get("/test-auth")
 async def test_auth(token: str = Depends(OAUTH2_SCHEME)):
-    return {"token": token}
+    return jwt.decode(token, environ['SECRET_KEY'], algorithms='HS256')

@@ -1,8 +1,14 @@
+import sys
 from datetime import datetime, timedelta
-from typing import Final
+from os import environ
+from os.path import join
+from typing import Any, Dict, Final
 
 from fastapi.security import OAuth2PasswordBearer
 from jose import jwt
+from src.services.logger.interfaces.i_logger import ILogger
+from src.helpers.container import CONTAINER
+from yaml import safe_load
 
 # This is instance will be injected in routes when those have to be secured.
 # This is just checcking the user exists and the inserted credentials are corect, role is not
@@ -13,6 +19,21 @@ from jose import jwt
 OAUTH2_SCHEME: Final[OAuth2PasswordBearer] = OAuth2PasswordBearer(
     tokenUrl="/auth/login",
 )
+
+
+# Read configuration file for jwt configuration.
+
+JWT_CONFIG: Final[Dict[str, Any]]
+try:
+    config_file_path = join(environ["CONFIGS_DIR"], "auth", "jwt_details.yaml")
+    with open(config_file_path) as config_file_stream:
+        JWT_CONFIG = safe_load(config_file_stream)
+except Exception as e:
+    logger = CONTAINER.get(ILogger)
+    logger.critical(
+        "errors", f"An error occured while reading the configuration file in {__file__}"
+    )
+    sys.exit()
 
 
 def hash_password(password: str) -> str:

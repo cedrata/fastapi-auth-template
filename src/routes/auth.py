@@ -1,7 +1,5 @@
-import sys
 from datetime import timedelta
 from os import environ
-from os.path import join
 from typing import Any, Dict, Final
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -16,21 +14,6 @@ from src.models.auth import AuthMessage
 from src.models.commons import HttpExceptionMessage
 from src.routes.enums.commons import Endpoint
 from src.services.logger.interfaces.i_logger import ILogger
-from yaml import safe_load
-
-# Read configuration file for jwt configuration.
-
-_JWT_CONFIG: Final[Dict[str, Any]]
-try:
-    config_file_path = join(environ["CONFIGS_DIR"], "auth", "jwt_details.yaml")
-    with open(config_file_path) as config_file_stream:
-        _JWT_CONFIG = safe_load(config_file_stream)
-except Exception as e:
-    logger = CONTAINER.get(ILogger)
-    logger.critical(
-        "errors", f"An error occured while reading the configuration file in {__file__}"
-    )
-    sys.exit()
 
 # Constant initialization.
 _LOGIN_POST_PARAMS: Final[Dict[Endpoint, Any]] = {
@@ -79,8 +62,8 @@ async def login(request_form: OAuth2PasswordRequestForm = Depends()):
     # The user exists.
     # Converting expriation times to timedelta.
     try:
-        access_timedelta = timedelta(minutes=_JWT_CONFIG["access_expiration"])
-        refresh_timedelta = timedelta(minutes=_JWT_CONFIG["refresh_expiration"])
+        access_timedelta = timedelta(minutes=auth.JWT_CONFIG["access_expiration"])
+        refresh_timedelta = timedelta(minutes=auth.JWT_CONFIG["refresh_expiration"])
     except KeyError as e:
         msg = f"An error occured while retriving the tokens expiration times"
         logger.error("auth", f"{msg}: {e}")
@@ -92,13 +75,13 @@ async def login(request_form: OAuth2PasswordRequestForm = Depends()):
             DB_USERS[request_form.username],
             access_timedelta,
             environ["SECRET_KEY"],
-            _JWT_CONFIG["algorithm"],
+            auth.JWT_CONFIG["algorithm"],
         )
         refresh_token = auth.create_token(
             DB_USERS[request_form.username],
             refresh_timedelta,
             environ["SECRET_KEY"],
-            _JWT_CONFIG["algorithm"],
+            auth.JWT_CONFIG["algorithm"],
         )
     except KeyError as e:
         msg = f"An error occured while retriving the secret or the algorithm to encode the tokens"
