@@ -10,5 +10,5 @@ reoutes_prefix: Final[str] = "/cdrt"
 
 app = FastAPI()
 
-app.include_router(hello_world_router, prefix=reoutes_prefix, tags=["Root"])
+app.include_router(hello_world_router, prefix=reoutes_prefix, tags=["Hello, world!"])
 app.include_router(auth_router, prefix="/auth", tags=["Auth"])

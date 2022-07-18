@@ -1,3 +1,5 @@
+from os import environ
+from os.path import join
 from typing import Final
 
 from injector import Binder, Injector, singleton
@@ -17,8 +19,9 @@ def resolve(binder: Binder) -> None:
     """
 
     # Singletons instantiations
-    logg = TimedLogger()
-    binder.bind(ILogger, to=logg, scope=singleton)
+    logger_config_file_path = join(environ["CONFIGS_DIR"], "log", "custom_log.yaml")
+    logger = TimedLogger(config_file_path=logger_config_file_path)
+    binder.bind(ILogger, to=logger, scope=singleton)
 
 
 CONTAINER: Final[Injector] = Injector([resolve])
