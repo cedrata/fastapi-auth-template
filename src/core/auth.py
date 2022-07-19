@@ -51,6 +51,8 @@ def create_token(
     data: dict, expires_delta: timedelta, secret_key: str, algorithm: str
 ) -> str:
     """Return a token for the given data, this function can be used to return both access and refresh tokens.
+    !!!IMPORTANT!!!
+    If "data" argument contains a password make sure it is hashed and not plain!!!
 
     Args:
         data (dict): data to encode in jwt.
