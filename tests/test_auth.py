@@ -1,8 +1,7 @@
-from base64 import decode
-from datetime import datetime, timedelta
+from datetime import timedelta
 from typing import Final
-from jose import ExpiredSignatureError, JWTError, jwt
 
+from jose import jwt
 from src.core.auth import create_token, hash_password, verify_password
 
 PLAIN_PASSWORD: Final[str] = "test-pwd"
@@ -30,8 +29,9 @@ def test_create_token():
     )
 
     try:
-        decoded_token: dict = jwt.decode(token=token, key=SECRET_KEY, algorithms=
-        "HS256")
+        decoded_token: dict = jwt.decode(
+            token=token, key=SECRET_KEY, algorithms="HS256"
+        )
         assert decoded_token == {**USER, "exp": decoded_token["exp"]}
     except:
         assert False
