@@ -9,6 +9,6 @@ To start-up the project some preliminar operations are required. Because the API
 
 This value must then be added to the environement variables ```$ export SECRET_KEY='the-string-obtained-with-openssl'```
 
-A second environement variable is required, the path containing all the directories for with configurations, to do so run ```$ export CONFIGS_DIR='/absolute/path/to/project/root/configs'
+A second environement variable is required, the path containing all the directories for with configurations, to do so run ```$ export CONFIGS_DIR='/absolute/path/to/project/root/configs```
 
 Now that the environement variable has been set is possible to start the server with ```$ uvicorn src.main:app --reload```
