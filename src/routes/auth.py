@@ -8,10 +8,11 @@ from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from jose import JWTError
 from src.core import auth
+from src.db.tables import user as db_user
 from src.helpers.container import CONTAINER
-from src.mock.fake_db import DB_USERS
 from src.models.auth import AuthMessage
 from src.models.commons import HttpExceptionMessage
+from src.models.user import UserLogin
 from src.routes.enums.commons import Endpoint
 from src.services.logger.interfaces.i_logger import ILogger
 
@@ -46,19 +47,25 @@ async def login(request_form: OAuth2PasswordRequestForm = Depends()):
     response: Any
     status_code: int
 
+    # Query to get the requested user.
+    user_res = await db_user.User.find_one(
+        db_user.User.username == request_form.username
+    )
+    # A projecton is not made because the password is required to check if the user has th
+    user_projection = UserLogin(username=user_res.username, roles=user_res.roles)
+
     error_message = "Invalid username or password"
     # Search if user exists in DB.
     # The user does not exists.
-    if not request_form.username in DB_USERS.keys():
+    if user_res is None:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, detail=error_message)
 
     # Check if the input password match the stored one,
     # but before doing so the password to check must be hashed, and then compared.
-    # if DB_USERS[request_form.username]["password"] != auth.hash_password(
-    #     request_form.password
-    # ):
     if not auth.verify_password(
-        request_form.password, DB_USERS[request_form.username]["password"]
+        # request_form.password, DB_USERS[request_form.username]["password"]
+        request_form.password,
+        user_res.password,
     ):
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, detail=error_message)
 
@@ -75,13 +82,13 @@ async def login(request_form: OAuth2PasswordRequestForm = Depends()):
     # Generating access and refresh tokens.
     try:
         access_token = auth.create_token(
-            DB_USERS[request_form.username],
+            user_projection.dict(),
             access_timedelta,
             environ["SECRET_KEY"],
             auth.JWT_CONFIG["algorithm"],
         )
         refresh_token = auth.create_token(
-            DB_USERS[request_form.username],
+            user_projection.dict(),
             refresh_timedelta,
             environ["SECRET_KEY"],
             auth.JWT_CONFIG["algorithm"],

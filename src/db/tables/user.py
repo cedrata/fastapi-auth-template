@@ -1,9 +1,10 @@
 from typing import List
 
-from beanie import Document
+from beanie import Document, Indexed
+
 
 class User(Document):
-    username: str
+    username: Indexed(str)
     password: str
     roles: List[str]
 
