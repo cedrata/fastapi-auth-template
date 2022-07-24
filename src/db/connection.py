@@ -1,4 +1,5 @@
 from typing import Final
+
 from beanie import init_beanie
 from motor.motor_asyncio import AsyncIOMotorClient
 from src.db.tables import user
