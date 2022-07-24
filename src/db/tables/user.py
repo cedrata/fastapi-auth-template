@@ -1,18 +1,11 @@
-from sqlalchemy import Boolean, Column, Integer, String
-from src.db import Base
+from typing import List
 
+from beanie import Document
 
-class User(Base):
-    __tablename__ = "users"
+class User(Document):
+    username: str
+    password: str
+    roles: List[str]
 
-    id = Column(
-        Integer,
-        primart_key=True,
-        index=True,
-        unique=True,
-        autoincrement=True,
-        nullable=False,
-    )
-    email = Column(String, unique=True, nullable=False)
-    password = Column(String, nullable=False)
-    is_admin = Column(Boolean, default=False, nullable=False)
+    class Settings:
+        name = "users"
