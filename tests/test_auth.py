@@ -18,6 +18,11 @@ def test_verify_password():
     assert verify_password(PLAIN_PASSWORD, hashed_password)
 
 
+def test_verify_bad_password():
+    hashed_password = hash_password(PLAIN_PASSWORD)
+    assert not verify_password("bad-pwd", hashed_password)
+
+
 def test_create_token():
     exp_delta = timedelta(minutes=5)
 
