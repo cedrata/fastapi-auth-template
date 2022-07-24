@@ -1,13 +1,19 @@
-from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from typing import Final
+from beanie import init_beanie
+from motor.motor_asyncio import AsyncIOMotorClient
+from src.db.tables import user
 
-# SQLALCHEMY_DATABASE_URL = "sqlite:///./sql_app.db"
-# # SQLALCHEMY_DATABASE_URL = "postgresql://user:password@postgresserver/db"
+# TODO: Move to config file.
+# TODO: Handle correctly secrets.
+_DATABASE_USERNAME: Final[str] = "admin"
+_DATABASE_PASSOWRD: Final[str] = "admin"
+_DATABASE_HOST: Final[str] = "localhost"
+_DATABASE_PORT: Final[str] = "27017"
+_DATABASE_NAME: Final[str] = "fastapi_auth_template"
 
-# engine = create_engine(
-#     SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
-# )
-# SessionLoacal = sessionmaker(autocommit=false, autoflush=False, bind=engine)
+_CONNECTION_STRING = f"mongodb://{_DATABASE_USERNAME}:{_DATABASE_PASSOWRD}@{_DATABASE_HOST}:{_DATABASE_PORT}/{_DATABASE_NAME}"
 
-Base = declarative_base()
+
+async def build_client() -> None:
+    client = AsyncIOMotorClient(_CONNECTION_STRING)
+    await init_beanie(client.fastapi_auth_template, document_models=[user.User])
