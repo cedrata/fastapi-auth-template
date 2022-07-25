@@ -16,6 +16,9 @@ from src.models.user import UserLogin
 from src.routes.enums.commons import Endpoint
 from src.services.logger.interfaces.i_logger import ILogger
 
+# Router instantiation.
+router = APIRouter()
+
 # Constant initialization.
 _LOGIN_POST_PARAMS: Final[Dict[Endpoint, Any]] = {
     Endpoint.RESPONSE_MODEL: AuthMessage,
@@ -26,14 +29,11 @@ _LOGIN_POST_PARAMS: Final[Dict[Endpoint, Any]] = {
         },
         status.HTTP_500_INTERNAL_SERVER_ERROR: {
             "model": HttpExceptionMessage,
-            "description": "Probably an errorr occured during the token creation",
+            "description": "An errorr occured during the token creation",
         },
     },
     Endpoint.DESCRIPTION: "Authenticate an user given username and password to return a set of access and refresh tokens after a succesful validation.",
 }
-
-# Router instantiation.
-router = APIRouter()
 
 
 @router.post(
@@ -108,3 +108,29 @@ async def login(request_form: OAuth2PasswordRequestForm = Depends()):
     status_code = status.HTTP_200_OK
 
     return JSONResponse(status_code=status_code, content=jsonable_encoder(response))
+
+
+_REFRESH_POST_PARAMS: Final[Dict[Endpoint, Any]] = {
+    Endpoint.RESPONSE_MODEL: AuthMessage,
+    Endpoint.RESPONSES: {
+        status.HTTP_403_FORBIDDEN: {
+            "model": HttpExceptionMessage,
+            "description": "Unsuccesfull refresh, the token may be expired or invalid",
+        },
+        status.HTTP_500_INTERNAL_SERVER_ERROR: {
+            "model": HttpExceptionMessage,
+            "description": "An error occured while refreshing the token",
+        },
+    },
+    Endpoint.DESCRIPTION: "Token refresh route to provide a new set of access and refresh token. The new set will be generated from the refresh token, if this one is expired then login is newly required.",
+}
+
+
+@router.post(
+    "/refresh",
+    response_model=_REFRESH_POST_PARAMS[Endpoint.RESPONSE_MODEL],
+    responses=_REFRESH_POST_PARAMS[Endpoint.RESPONSES],
+    description=_REFRESH_POST_PARAMS[Endpoint.DESCRIPTION],
+)
+async def refresh(refresh_token: str):
+    raise HTTPException(status_code=status.HTTP_501_NOT_IMPLEMENTED)
