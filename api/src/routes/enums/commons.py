@@ -1,0 +1,26 @@
+from enum import Enum, auto
+
+
+class Endpoint(Enum):
+    RESPONSE_MODEL = auto()
+    STATUS_CODE = auto()
+    TAGS = auto()
+    DEPENDENCIES = auto()
+    SUMMARY = auto()
+    DESCRIPTION = auto()
+    RESPONSE_DESCRIPTION = auto()
+    RESPONSES = auto()
+    DEPRECATED = auto()
+    OPERATION_ID = auto()
+    RESPONSE_MODEL_INCLUDE = auto()
+    RESPONSE_MODEL_EXCLUDE = auto()
+    RESPONSE_MODEL_BY_ALIAS = auto()
+    RESPONSE_MODEL_EXCLUDE_UNSET = auto()
+    RESPONSE_MODEL_EXCLUDE_DEFAULTS = auto()
+    RESPONSE_MODEL_EXCLUDE_NONE = auto()
+    INCLUDE_IN_SCHEMA = auto()
+    RESPONSE_CLASS = auto()
+    NAME = auto()
+    CALLBACKS = auto()
+    OPENAPI_EXTRA = auto()
+    GENERATE_UNIQUE_ID_FUNCTION = auto()
