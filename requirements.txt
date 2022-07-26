@@ -1,6 +1,7 @@
 anyio==3.6.1
 attrs==21.4.0
 bcrypt==3.2.2
+beanie==1.11.6
 black==22.6.0
 bpyutils==0.5.2
 cffi==1.15.1
@@ -14,6 +15,8 @@ httptools==0.4.0
 idna==3.3
 iniconfig==1.1.1
 injector==0.20.1
+motor==3.0.0
+multidict==6.0.2
 mypy-extensions==0.4.3
 packaging==21.3
 passlib==1.7.4
@@ -26,6 +29,7 @@ pyasn1==0.4.8
 pycparser==2.21
 pydantic==1.9.1
 pydantic-yaml==0.8.0
+pymongo==4.2.0
 pyparsing==3.0.9
 pytest==7.1.2
 python-dotenv==0.20.0
@@ -36,7 +40,9 @@ rsa==4.8
 semver==2.13.0
 six==1.16.0
 sniffio==1.2.0
+-e git+ssh://git@github.com/cedrata/fastapi-auth-template.git@f0447bfabd8ffcc8883c4cd105f4530fac041bc4#egg=src
 starlette==0.19.1
+toml==0.10.2
 tomli==2.0.1
 types-Deprecated==1.2.9
 typing_extensions==4.3.0
@@ -45,3 +51,4 @@ uvloop==0.16.0
 watchfiles==0.15.0
 websockets==10.3
 wrapt==1.14.1
+yarl==1.7.2

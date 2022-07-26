@@ -2,7 +2,7 @@ import logging
 import sys
 from logging import Logger, getLogger
 from logging.handlers import TimedRotatingFileHandler
-from os.path import dirname as os_path_dirname
+from os import environ
 from os.path import exists as os_path_exists
 from os.path import isfile as os_path_isfile
 from os.path import join as os_path_join
@@ -13,7 +13,7 @@ from src.services.logger.models.configuration import TimedRotatingFileConfig
 from yaml import safe_load
 
 DEFAULT_LOG_FILE: Final[str] = os_path_join(
-    os_path_dirname(str(sys.modules["__main__"].__file__)), "default.log"
+    environ['LOGGING_DIR'], "default.log"
 )
 DEFAULT_LOG_LEVEL: Final[str] = LogLevel.DEBUG
 DEFAULT_LOG_FORMAT: Final[str] = logging.Formatter("%(levelname)s-%(message)s")
