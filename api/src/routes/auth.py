@@ -51,14 +51,15 @@ async def login(request_form: OAuth2PasswordRequestForm = Depends()):
     user_res = await db_user.User.find_one(
         db_user.User.username == request_form.username
     )
-    # A projecton is not made because the password is required to check if the user has th
-    user_projection = UserLogin(username=user_res.username, roles=user_res.roles)
 
     error_message = "Invalid username or password"
     # Search if user exists in DB.
     # The user does not exists.
+
     if user_res is None:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, detail=error_message)
+    # A projecton is not made because the password is required to check if the user has th
+    user_projection = UserLogin(username=user_res.username, roles=user_res.roles)
 
     # Check if the input password match the stored one,
     # but before doing so the password to check must be hashed, and then compared.
