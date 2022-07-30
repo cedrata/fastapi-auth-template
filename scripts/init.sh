@@ -9,22 +9,46 @@
 ################################################################################
 
 ################################################################################
-# Variables initiaization.
-
 # Echo text colors.
 DEFAULT_COLOUR='\033[33;0m'
 RED='\033[33;31m'
 GREEN='\033[33;32m'
 ORANGE='\033[33;33m'
 
-# Environement variabled.
+################################################################################
+# Reading input arguments.
+# Making sure the number read arguments is correct.
+if [ "$#" -lt 3 ]; then
+    echo -e "${ORANGE}Usage: env.sh <configs-dir-absolute-path> <logging-dir-absolute-path> <dotenv-absolute-path>"
+    echo "Interrupting."
+    return -1
+fi
+
+# Making sure the arguments are absolute paths.
+if [[ ! "$1" = /* ]]; then
+    echo -e "${RED}The configs directory path must be absolute or does not exists."
+    echo "Interrupting."
+    exit -1
+elif [[ ! "$2" = /* ]]; then
+    echo -e "${RED}The logging directory must be absolute or does not exists."
+    echo "Interrupting."
+    exit -1
+elif [[ ! "$3" = /* ]]; then
+    echo -e "${RED}The dotenv path must be absolute or does not exists."
+    echo "Interrupting."
+    exit -1
+fi
+
+################################################################################
+# Variables initiaization.
+
+# if the validation is passed initialize all the variables.
+CONFIGS_DIR=$1
+LOGGING_DIR=$2
+DOTENV=$3
+
+# Differnt variables from input arguments.
 SECRET_KEY=$(openssl rand -hex 32)
-CONFIGS_DIR=$(pwd)/../configs
-LOGGING_DIR=$(pwd)/../logs
-
-# File containing the environement variables to export.
-DOTENV=$(pwd)/../.env
-
 echo -e "${DEFAULT_COLOUR}Initializing workspace..."
 
 ################################################################################
@@ -42,7 +66,8 @@ if [ ! -d $CONFIGS_DIR ]; then
 else
     echo -e "${DEFAULT_COLOUR}Configuration directory existing, moving on..."
 fi
-echo -e "${DEFAULT_COLOUR}Dicrectories validated with success."
+echo -e "${GREEN}Dicrectories validated with success."
+echo -e "${DEFAULT_COLOUR}"
 
 ################################################################################
 # Printing variables to .env file.
@@ -50,16 +75,10 @@ echo "Printing required environement variables to $(pwd)/.env file..."
 echo "SECRET_KEY=${SECRET_KEY}" > $DOTENV
 echo "CONFIGS_DIR=${CONFIGS_DIR}" >> $DOTENV
 echo "LOGGING_DIR=${LOGGING_DIR}" >> $DOTENV
-echo "${DOTENV} file created succesfully."
-
-
-################################################################################
-# Exporting variables to environement.
-echo "Exporting variables to the environement..."
-set -a
-source "${DOTENV}"
-set +a
-echo "Environement variables exported with success."
+echo -e "${GREEN}$DOTENV file created succesfully."
+echo -e "${DEFAULT_COLOUR} Now you can execute the following command to set the environement variables: " 
+echo ""
+echo -e '\tset -a; source PATH TO DOTENV; set +a;'
+echo ""
 
 echo -e "${GREEN}Success, you're ready to work :)"
-exit 0
