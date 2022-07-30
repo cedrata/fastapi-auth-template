@@ -17,7 +17,7 @@ To configure the develpement environement 2 scenarios may come up:
 
 If you are in the first case you may want to run a script that checks if the directory is correctly configured and all the pieces are at their place, so run the ```init.sh``` script by typing ```$ chmod 777 ./scripts/init.sh && ./scripts/init.sh``` in your shell. This command will do some checks on the directories and export the required environement variables for the project to run.
 
-Otherwise is not the first time you launch this project you will just need to export the environement variables with the ```.env``` file generated w/ ```init.sh``` script by typing ```$ env $(cat PATH TO DOTENV | xargs)```.
+Otherwise is not the first time you launch this project you will just need to export the environement variables with the ```.env``` file generated w/ ```init.sh``` script by typing ```$ set -a; source PATH TO DOTENV; set +a```.
 
 Whenever you are ready to try the api simpy run the ```serve_dev.sh``` script by typing ```$ chmod 777 ./scripts/serve_dev.sh && ./scripts/serve_dev.sh``` which will start an uvicorn instance.
 

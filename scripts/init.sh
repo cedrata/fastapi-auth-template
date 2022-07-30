@@ -78,7 +78,7 @@ echo "LOGGING_DIR=${LOGGING_DIR}" >> $DOTENV
 echo -e "${GREEN}$DOTENV file created succesfully."
 echo -e "${DEFAULT_COLOUR} Now you can execute the following command to set the environement variables: " 
 echo ""
-echo -e "\tenv" '$(cat PATH TO DOTENV | xargs)'
+echo -e '\tset -a; source PATH TO DOTENV; set +a;'
 echo ""
 
 echo -e "${GREEN}Success, you're ready to work :)"
