@@ -21,7 +21,7 @@ ORANGE='\033[33;33m'
 if [ "$#" -lt 3 ]; then
     echo -e "${ORANGE}Usage: env.sh <configs-dir-absolute-path> <logging-dir-absolute-path> <dotenv-absolute-path>"
     echo "Interrupting."
-    exit -1
+    return -1
 fi
 
 # Making sure the arguments are absolute paths.
@@ -66,7 +66,8 @@ if [ ! -d $CONFIGS_DIR ]; then
 else
     echo -e "${DEFAULT_COLOUR}Configuration directory existing, moving on..."
 fi
-echo -e "${DEFAULT_COLOUR}Dicrectories validated with success."
+echo -e "${GREEN}Dicrectories validated with success."
+echo -e "${DEFAULT_COLOUR}"
 
 ################################################################################
 # Printing variables to .env file.
@@ -74,16 +75,10 @@ echo "Printing required environement variables to $(pwd)/.env file..."
 echo "SECRET_KEY=${SECRET_KEY}" > $DOTENV
 echo "CONFIGS_DIR=${CONFIGS_DIR}" >> $DOTENV
 echo "LOGGING_DIR=${LOGGING_DIR}" >> $DOTENV
-echo "${DOTENV} file created succesfully."
-
-
-################################################################################
-# Exporting variables to environement.
-echo "Exporting variables to the environement..."
-set -a
-source "${DOTENV}"
-set +a
-echo "Environement variables exported with success."
+echo -e "${GREEN}$DOTENV file created succesfully."
+echo -e "${DEFAULT_COLOUR} Now you can execute the following command to set the environement variables: " 
+echo ""
+echo -e "\tenv" '$(cat PATH TO DOTENV | xargs)'
+echo ""
 
 echo -e "${GREEN}Success, you're ready to work :)"
-exit 0
