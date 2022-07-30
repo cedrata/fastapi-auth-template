@@ -1,15 +1,14 @@
-# import sys
-# from os import pardir, path
+import asyncio
 
-# sys.path.append(path.abspath(path.join(pardir, "src")))
+from fastapi.testclient import TestClient
+from src.app import fastapi_app
+from src.db.connection import build_client as build_db_client
 
-# # from fastapi.testclient import TestClient
+# Executing async initialization procedures.
+_loop = asyncio.new_event_loop()
+_loop.run_until_complete(build_db_client())
+_loop.close()
 
-# from src.main import app
-# from src.db.connection import build_client as build_db_client
-
-# # Building the client to make request while testing.
-# build_db_client()
-
-# # Building FastAPI client.
-# fastapi_client = TestClient(app)
+# Executing sync initialization procedures.
+# Building FastAPI client.
+fastapi_client = TestClient(fastapi_app)
