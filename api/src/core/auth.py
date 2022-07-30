@@ -48,7 +48,11 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 
 
 def create_token(
-    data: dict, expires_delta: timedelta, secret_key: str, algorithm: str
+    data: dict,
+    expires_delta: timedelta,
+    is_refresh: bool,
+    secret_key: str,
+    algorithm: str,
 ) -> str:
     """Return a token for the given data, this function can be used to return both access and refresh tokens.
     !!!IMPORTANT!!!
@@ -66,5 +70,6 @@ def create_token(
     to_encode = data.copy()
     expire = datetime.utcnow() + expires_delta
     to_encode.update({"exp": expire})
+    to_encode.update({"is_refresh": is_refresh})
     encoded_jwt = jwt.encode(to_encode, secret_key, algorithm=algorithm)
     return encoded_jwt

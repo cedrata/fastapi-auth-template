@@ -6,11 +6,11 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordRequestForm
-from jose import JWTError
+from jose import ExpiredSignatureError, JWTError, jwt
 from src.core import auth
 from src.db.tables import user as db_user
 from src.helpers.container import CONTAINER
-from src.models.auth import AuthMessage
+from src.models.auth import AuthMessage, RefreshMessage
 from src.models.commons import HttpExceptionMessage
 from src.models.user import UserLogin
 from src.routes.enums.commons import Endpoint
@@ -85,12 +85,14 @@ async def login(request_form: OAuth2PasswordRequestForm = Depends()):
         access_token = auth.create_token(
             user_projection.dict(),
             access_timedelta,
+            False,
             environ["SECRET_KEY"],
             auth.JWT_CONFIG["algorithm"],
         )
         refresh_token = auth.create_token(
             user_projection.dict(),
             refresh_timedelta,
+            True,
             environ["SECRET_KEY"],
             auth.JWT_CONFIG["algorithm"],
         )
@@ -133,5 +135,47 @@ _REFRESH_POST_PARAMS: Final[Dict[Endpoint, Any]] = {
     responses=_REFRESH_POST_PARAMS[Endpoint.RESPONSES],
     description=_REFRESH_POST_PARAMS[Endpoint.DESCRIPTION],
 )
-async def refresh(refresh_token: str):
-    raise HTTPException(status_code=status.HTTP_501_NOT_IMPLEMENTED)
+async def refresh(body: RefreshMessage):
+    logger = CONTAINER.get(ILogger)
+    response: Any
+    status_code: int
+    decoded_token: dict
+
+    # Decode token.
+    try:
+        decoded_token: dict = jwt.decode(
+            token=body.refresh_token,
+            key=environ["SECRET_KEY"],
+            algorithms=auth.JWT_CONFIG["algorithm"],
+        )
+    except JWTError as e:
+        # Raise exception.
+        ...
+    except ExpiredSignatureError as e:
+        # Raise exception.
+        ...
+    except Exception as e:
+        # Raise exception.
+        ...
+
+    # If is_refresh is false raise exception.
+    if decoded_token["is_refresh"] is False:
+        # Raise exception.
+        ...
+
+    # If username not in db raise exception.
+    user_res = await db_user.User.find_one(
+        db_user.User.username == decoded_token["username"]
+    )
+
+    if user_res is None:
+        # Raise exception.
+        ...
+
+    # Generate new token pair.
+    response = AuthMessage(
+        access_token="access", refresh_token="refresh", token_type="bearer"
+    )
+    return JSONResponse(
+        status_code=status.HTTP_200_OK, content=jsonable_encoder(response)
+    )
