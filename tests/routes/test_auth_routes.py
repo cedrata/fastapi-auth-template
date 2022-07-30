@@ -85,7 +85,7 @@ async def test_refresh():
     async with AsyncClient(app=fastapi_app, base_url=BASE_URL) as ac:
         response = await ac.post(
             "/auth/refresh",
-            json={"refresh_token": login_response["refresh_token"]},
+            json={"refresh_token": json.loads(login_response.text)["refresh_token"]},
         )
 
     assert response.status_code == 200
