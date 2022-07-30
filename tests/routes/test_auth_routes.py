@@ -100,7 +100,7 @@ async def test_expired_token_refresh():
     await build_db_client()
 
     # Add any expired token.
-    expired_refresh_token = ""
+    expired_refresh_token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6InVzZXIiLCJyb2xlcyI6W10sImV4cCI6MTY1OTIxOTgyNywiaXNfcmVmcmVzaCI6dHJ1ZX0.39q63PmDMVLe837vPMWPW37Wq0nRaEz0YRqlNpZUHtA"
 
     async with AsyncClient(app=fastapi_app, base_url=BASE_URL) as ac:
         response = await ac.post(
@@ -115,7 +115,7 @@ async def test_invalid_token_refresh():
     await build_db_client()
 
     # Add any invalid token.
-    invalid_refresh_token = ""
+    invalid_refresh_token = "pippo"
 
     async with AsyncClient(app=fastapi_app, base_url=BASE_URL) as ac:
         response = await ac.post(
