@@ -1,6 +1,62 @@
-# from tests import fastapi_client
+import json
+from httpx import AsyncClient
+import pytest
+from tests import fastapi_app, build_db_client
 
 
-def test_login():
-    # response = fastapi_client.post("/auth/login", json={"username": "admin", "password": "admin"})
-    assert False
+@pytest.mark.asyncio
+async def test_login():
+    await build_db_client()
+    async with AsyncClient(app=fastapi_app, base_url="http://test") as ac:
+        response = await ac.post(
+            "/auth/login",
+            data={
+                "grant_type": "",
+                "username": "admin",
+                "password": "admin",
+                "scope": "",
+                "client_id": "",
+                "client_secret": "",
+            },
+        )
+    assert response.status_code == 200
+    response_json: dict = json.loads(response.text)
+    assert "access_token" in response_json.keys()
+    assert "refresh_token" in response_json.keys()
+    assert "token_type" in response_json.keys()
+
+
+@pytest.mark.asyncio
+async def test_bad_username_login():
+    await build_db_client()
+    async with AsyncClient(app=fastapi_app, base_url="http://test") as ac:
+        response = await ac.post(
+            "/auth/login",
+            data={
+                "grant_type": "",
+                "username": "admon",
+                "password": "admin",
+                "scope": "",
+                "client_id": "",
+                "client_secret": "",
+            },
+        )
+    assert response.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_bad_password_login():
+    await build_db_client()
+    async with AsyncClient(app=fastapi_app, base_url="http://test") as ac:
+        response = await ac.post(
+            "/auth/login",
+            data={
+                "grant_type": "",
+                "username": "admin",
+                "password": "admon",
+                "scope": "",
+                "client_id": "",
+                "client_secret": "",
+            },
+        )
+    assert response.status_code == 401
