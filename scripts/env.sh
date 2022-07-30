@@ -9,13 +9,34 @@
 ################################################################################
 
 ################################################################################
-# Variables initiaization.
-# Echo text colors
+# Echo text colors.
 RED='\033[33;31m'
 GREEN='\033[33;32m'
+ORANGE='\033[33;33m'
 
-DOTENV=$(pwd)/../.env
+################################################################################
+# Reading input arguments.
+# Making sure the number read arguments is correct.
+if [ "$#" -lt 1 ]; then
+    echo -e "${ORANGE}Usage: env.sh <dotenv-absolute-path>"
+    echo "Interrupting."
+    exit -1
+fi
 
+# Making sure the first argument is an absolute path.
+if [[ ! "$1" = /* ]]; then
+    echo -e "${RED}The dotenv path must be absolute."
+    echo "Interrupting."
+    exit -1
+fi
+
+################################################################################
+# Variables initiaization.
+
+# If the validation is passed initialize all the variables.
+DOTENV=$1
+
+# Different variables from input arguments.
 ERROR=false
 
 ################################################################################
@@ -23,7 +44,7 @@ ERROR=false
 echo "Exporting variables to the environement..."
 set -a
 if [ ! -f $DOTENV ]; then
-    echo "${RED}An error occured setting the variables, check that the ${DOTENV} file exists."
+    echo -e "${RED}An error occured setting the variables, check that the ${DOTENV} file exists."
     ERROR=true
 else
     echo "Environement variables exported with success."
@@ -32,7 +53,7 @@ set +a
 
 if [[ "$ERROR" = "true" ]]; then
     echo -e "${RED}Interrupting."
-    exit -1
+    exit -2
 fi
 
 echo -e "${GREEN}Success, you're ready to work :)"
