@@ -99,9 +99,8 @@ async def test_refresh():
 async def test_expired_token_refresh():
     await build_db_client()
 
-    # Add any expired token.
-    # If this test is givin you issues, just create a new token with the key you are using and let it expire, then run again the test.
-    expired_refresh_token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6InVzZXIiLCJyb2xlcyI6W10sImV4cCI6MTY1OTIxOTgyNywiaXNfcmVmcmVzaCI6dHJ1ZX0.39q63PmDMVLe837vPMWPW37Wq0nRaEz0YRqlNpZUHtA"
+    # Token generated w/ secret key contained in tests/__init__.py
+    expired_refresh_token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6InVzZXIiLCJyb2xlcyI6W10sImV4cCI6MTY1OTI3MTY1MCwiaXNfcmVmcmVzaCI6dHJ1ZX0.An__1VtiNl38kLUfZyVhtljsAh4w8VTj0anv0lAFjLI"
 
     async with AsyncClient(app=fastapi_app, base_url=BASE_URL) as ac:
         response = await ac.post(
@@ -140,4 +139,5 @@ async def test_invalid_token_structure_refresh():
     assert response.status_code == 403
 
 
-# Maybe a test for bad payload ca be added, but it would be too much of a time effort.
+# Maybe a test for bad payload ca be added, but the moment I am too lazy to do it. 
+# Honestly it looks like it works :D.
