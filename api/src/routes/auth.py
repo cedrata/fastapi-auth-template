@@ -6,7 +6,8 @@ from fastapi import APIRouter, Depends, Header, HTTPException, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordRequestForm
-from jose import ExpiredSignatureError, JWTError, jwt
+from jose import jwt
+from jose.exceptions import ExpiredSignatureError, JWTError
 from src.core import auth
 from src.db.collections import user as db_user
 from src.helpers.container import CONTAINER
@@ -158,7 +159,7 @@ async def refresh(refresh_token: str | None = Header(default=None)):
         # TODO: add logger.
         raise HTTPException(status.HTTP_403_FORBIDDEN, detail=msg)
     except JWTError as e:
-        msg = "The provided token is invalid."
+        msg = "The provided token is invalid, or cyphered with a different key."
         # TODO: add logger.
         raise HTTPException(status.HTTP_403_FORBIDDEN, detail=msg)
     except Exception as e:
