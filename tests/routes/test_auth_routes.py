@@ -100,6 +100,7 @@ async def test_expired_token_refresh():
     await build_db_client()
 
     # Add any expired token.
+    # If this test is givin you issues, just create a new token with the key you are using and let it expire, then run again the test.
     expired_refresh_token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6InVzZXIiLCJyb2xlcyI6W10sImV4cCI6MTY1OTIxOTgyNywiaXNfcmVmcmVzaCI6dHJ1ZX0.39q63PmDMVLe837vPMWPW37Wq0nRaEz0YRqlNpZUHtA"
 
     async with AsyncClient(app=fastapi_app, base_url=BASE_URL) as ac:
@@ -123,3 +124,20 @@ async def test_invalid_token_refresh():
         )
 
     assert response.status_code == 403
+
+
+@pytest.mark.asyncio
+async def test_invalid_token_structure_refresh():
+    await build_db_client()
+
+    invalid_refresh_token = "eyJhbGciOiJIUzI1NiJ9.eyJpbnZhbGlkLWZpZWxkcyI6ImEgcmFuZG9tIHZhbHVlIn0.lEk4w_k3Sc-IzVeEWj0qIABdY2Nt5zClJPeLFN5FchA"
+
+    async with AsyncClient(app=fastapi_app, base_url=BASE_URL) as ac:
+        response = await ac.post(
+            "/auth/refresh", headers={"Refresh-Token": invalid_refresh_token}
+        )
+
+    assert response.status_code == 403
+
+
+# Maybe a test for bad payload ca be added, but it would be too much of a time effort.
