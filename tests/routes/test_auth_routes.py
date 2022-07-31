@@ -85,7 +85,7 @@ async def test_refresh():
     async with AsyncClient(app=fastapi_app, base_url=BASE_URL) as ac:
         response = await ac.post(
             "/auth/refresh",
-            json={"refresh_token": json.loads(login_response.text)["refresh_token"]},
+            headers={"Refresh-Token": json.loads(login_response.text)["refresh_token"]},
         )
 
     assert response.status_code == 200
@@ -104,7 +104,7 @@ async def test_expired_token_refresh():
 
     async with AsyncClient(app=fastapi_app, base_url=BASE_URL) as ac:
         response = await ac.post(
-            "/auth/refresh", json={"refresh_token": expired_refresh_token}
+            "/auth/refresh", headers={"Refresh-Token": expired_refresh_token}
         )
 
     assert response.status_code == 403
@@ -119,7 +119,7 @@ async def test_invalid_token_refresh():
 
     async with AsyncClient(app=fastapi_app, base_url=BASE_URL) as ac:
         response = await ac.post(
-            "/auth/refresh", json={"refresh_token": invalid_refresh_token}
+            "/auth/refresh", headers={"Refresh-Token": invalid_refresh_token}
         )
 
     assert response.status_code == 403
