@@ -8,7 +8,7 @@ from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from jose import ExpiredSignatureError, JWTError, jwt
 from src.core import auth
-from src.db.tables import user as db_user
+from src.db.collections import user as db_user
 from src.helpers.container import CONTAINER
 from src.models.auth import AuthMessage
 from src.models.commons import HttpExceptionMessage

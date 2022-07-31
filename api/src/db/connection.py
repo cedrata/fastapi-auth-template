@@ -2,7 +2,7 @@ from typing import Final
 
 from beanie import init_beanie
 from motor.motor_asyncio import AsyncIOMotorClient
-from src.db.tables import user
+from src.db.collections import user
 
 # TODO: Move to config file.
 # TODO: Handle correctly secrets.
