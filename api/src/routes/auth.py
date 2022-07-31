@@ -2,7 +2,7 @@ from datetime import timedelta
 from os import environ
 from typing import Any, Dict, Final
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, Header, HTTPException, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordRequestForm
@@ -10,7 +10,7 @@ from jose import ExpiredSignatureError, JWTError, jwt
 from src.core import auth
 from src.db.tables import user as db_user
 from src.helpers.container import CONTAINER
-from src.models.auth import AuthMessage, RefreshMessage
+from src.models.auth import AuthMessage
 from src.models.commons import HttpExceptionMessage
 from src.models.user import UserLogin
 from src.routes.enums.commons import Endpoint
@@ -116,9 +116,13 @@ async def login(request_form: OAuth2PasswordRequestForm = Depends()):
 _REFRESH_POST_PARAMS: Final[Dict[Endpoint, Any]] = {
     Endpoint.RESPONSE_MODEL: AuthMessage,
     Endpoint.RESPONSES: {
+        status.HTTP_401_UNAUTHORIZED: {
+            "model": HttpExceptionMessage,
+            "description": "The token contains informations of unexisting user which is not in the database.",
+        },
         status.HTTP_403_FORBIDDEN: {
             "model": HttpExceptionMessage,
-            "description": "Unsuccesfull refresh, the token may be expired or invalid",
+            "description": "Unsuccesfull refresh, the token may be expired, invalid or not a refresh token.",
         },
         status.HTTP_500_INTERNAL_SERVER_ERROR: {
             "model": HttpExceptionMessage,
@@ -135,33 +139,42 @@ _REFRESH_POST_PARAMS: Final[Dict[Endpoint, Any]] = {
     responses=_REFRESH_POST_PARAMS[Endpoint.RESPONSES],
     description=_REFRESH_POST_PARAMS[Endpoint.DESCRIPTION],
 )
-async def refresh(body: RefreshMessage):
+async def refresh(refresh_token: str | None = Header(default=None)):
     logger = CONTAINER.get(ILogger)
     response: Any
     status_code: int
     decoded_token: dict
+    msg: str
 
     # Decode token.
     try:
         decoded_token: dict = jwt.decode(
-            token=body.refresh_token,
+            token=refresh_token,
             key=environ["SECRET_KEY"],
             algorithms=auth.JWT_CONFIG["algorithm"],
         )
-    except JWTError as e:
-        # Raise exception.
-        ...
     except ExpiredSignatureError as e:
-        # Raise exception.
-        ...
+        msg = "The provided token is expired"
+        # TODO: add logger.
+        raise HTTPException(status.HTTP_403_FORBIDDEN, detail=msg)
+    except JWTError as e:
+        msg = "The provided token is invalid."
+        # TODO: add logger.
+        raise HTTPException(status.HTTP_403_FORBIDDEN, detail=msg)
     except Exception as e:
-        # Raise exception.
-        ...
+        msg = "An unknown error occured while decoding the token, make sure you are passing a valid and not expired token."
+        # TODO: add logger.
+        raise HTTPException(status.HTTP_403_FORBIDDEN, detail=msg)
 
-    # If is_refresh is false raise exception.
+    # Make sure the token has correct structure.
+    if auth.TOKEN_FIELDS != set(decoded_token.keys()):
+        msg = "The provided token does not match the current schema, make sure you are pasing a toke with valid structure."
+        raise HTTPException(status.HTTP_403_FORBIDDEN, detail=msg)
+
+    # Make sure the token is a refresh token.
     if decoded_token["is_refresh"] is False:
-        # Raise exception.
-        ...
+        msg = "The provided token is not a refresh token, make sure to provide the corret token."
+        raise HTTPException(status.HTTP_403_FORBIDDEN, detail=msg)
 
     # If username not in db raise exception.
     user_res = await db_user.User.find_one(
@@ -169,13 +182,54 @@ async def refresh(body: RefreshMessage):
     )
 
     if user_res is None:
-        # Raise exception.
-        ...
+        msg = "The token contains informations of an unexisting user."
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, detail=msg)
+
+    # The token is valid and is about an existing user, generate a new token pair.
+
+    # A projecton is not made because the password is required to check if the user has th
+    user_projection = UserLogin(username=user_res.username, roles=user_res.roles)
+
+    # Converting expriation times to timedelta.
+    try:
+        access_timedelta = timedelta(minutes=auth.JWT_CONFIG["access_expiration"])
+        refresh_timedelta = timedelta(minutes=auth.JWT_CONFIG["refresh_expiration"])
+    except KeyError as e:
+        msg = f"An error occured while retriving the tokens expiration times"
+        logger.error("auth", f"{msg}: {e}")
+        raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
+
+    # Generating access and refresh tokens.
+    try:
+        new_access_token = auth.create_token(
+            user_projection.dict(),
+            access_timedelta,
+            False,
+            environ["SECRET_KEY"],
+            auth.JWT_CONFIG["algorithm"],
+        )
+        new_refresh_token = auth.create_token(
+            user_projection.dict(),
+            refresh_timedelta,
+            True,
+            environ["SECRET_KEY"],
+            auth.JWT_CONFIG["algorithm"],
+        )
+    except KeyError as e:
+        msg = f"An error occured while retriving the secret or the algorithm to encode the tokens"
+        logger.error("auth", f"{msg}: {e}")
+        raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
+    except JWTError as e:
+        msg = f"An error occured while encoding the tokens"
+        logger.error("auth", f"{msg}: {e}")
+        raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
 
     # Generate new token pair.
     response = AuthMessage(
-        access_token="access", refresh_token="refresh", token_type="bearer"
+        access_token=new_access_token,
+        refresh_token=new_refresh_token,
+        token_type="bearer",
     )
-    return JSONResponse(
-        status_code=status.HTTP_200_OK, content=jsonable_encoder(response)
-    )
+    status_code = status.HTTP_200_OK
+
+    return JSONResponse(status_code=status_code, content=jsonable_encoder(response))

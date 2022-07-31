@@ -37,6 +37,8 @@ except Exception as e:
     )
     sys.exit()
 
+TOKEN_FIELDS: Final[set] = {"username", "roles", "exp", "is_refresh"}
+
 
 def hash_password(password: str) -> str:
     """Returning the given password with hash."""
