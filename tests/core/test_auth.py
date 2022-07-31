@@ -30,6 +30,7 @@ def test_create_token():
         data=USER,
         expires_delta=exp_delta,
         secret_key=SECRET_KEY,
+        is_refresh=True,
         algorithm="HS256",
     )
 
@@ -37,6 +38,6 @@ def test_create_token():
         decoded_token: dict = jwt.decode(
             token=token, key=SECRET_KEY, algorithms="HS256"
         )
-        assert decoded_token == {**USER, "exp": decoded_token["exp"]}
+        assert decoded_token == {**USER, "exp": decoded_token["exp"], "is_refresh": True}
     except:
         assert False

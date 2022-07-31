@@ -1,8 +1,9 @@
+from tkinter import W
 from pydantic import BaseModel
 
 
 class AuthMessage(BaseModel):
-    """Class that extend the StatusMessage to access and refresh token."""
+    """Class that represent the answer after a succesful authentication."""
 
     access_token: str
     refresh_token: str
