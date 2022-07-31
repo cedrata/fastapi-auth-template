@@ -2,7 +2,13 @@ from datetime import timedelta
 from typing import Final
 
 from jose import jwt
-from src.core.auth import create_token, hash_password, verify_password
+from src.core.auth import (
+    create_token,
+    hash_password,
+    validate_refresh_token,
+    validate_token_base,
+    verify_password,
+)
 
 PLAIN_PASSWORD: Final[str] = "test-pwd"
 USER: Final[dict] = {"username": "mariorossi", "password": "secure-hashed-pwd"}
@@ -38,6 +44,20 @@ def test_create_token():
         decoded_token: dict = jwt.decode(
             token=token, key=SECRET_KEY, algorithms="HS256"
         )
-        assert decoded_token == {**USER, "exp": decoded_token["exp"], "is_refresh": True}
+        assert decoded_token == {
+            **USER,
+            "exp": decoded_token["exp"],
+            "is_refresh": True,
+        }
     except:
         assert False
+
+
+def test_validate_token_base():
+    test_decoded_token = {"username": "", "roles": "", "exp": "", "is_refresh": "True"}
+    assert validate_token_base(test_decoded_token)
+
+
+def test_validate_refresh_token():
+    test_decoded_token = {"username": "", "roles": "", "exp": "", "is_refresh": "True"}
+    assert validate_refresh_token(test_decoded_token)

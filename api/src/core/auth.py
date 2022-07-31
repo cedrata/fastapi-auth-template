@@ -6,7 +6,9 @@ from typing import Any, Dict, Final
 
 from fastapi.security import OAuth2PasswordBearer
 from jose import jwt
+from jose.exceptions import ExpiredSignatureError, JWTError
 from passlib.context import CryptContext
+from src.core.exceptions import DecodeTokenError, ValidateTokenError
 from src.helpers.container import CONTAINER
 from src.services.logger.interfaces.i_logger import ILogger
 from yaml import safe_load
@@ -75,3 +77,79 @@ def create_token(
     to_encode.update({"is_refresh": is_refresh})
     encoded_jwt = jwt.encode(to_encode, secret_key, algorithm=algorithm)
     return encoded_jwt
+
+
+def decode_token(encoded_token: str) -> dict:
+    """This function will decode a given token and say wether is valid or not.
+
+    Args:
+        encoded_token (str): token to decode.
+
+    Raises:
+        DecodeTokenError: if anything goes an HTTPException is returned.
+
+    Returns:
+        dict: a dictionary containing the decoded_token.
+    """
+
+    # This function is tested when testing the /auth/refresh route.
+    decoded_token: dict
+    try:
+        decoded_token = jwt.decode(
+            token=encoded_token,
+            key=environ["SECRET_KEY"],
+            algorithms=JWT_CONFIG["algorithm"],
+        )
+    except ExpiredSignatureError as e:
+        msg = "The provided token is expired"
+        raise DecodeTokenError(loggable=str(e), msg=msg)
+    except JWTError as e:
+        msg = "The provided token is invalid, or cyphered with a different key."
+        raise DecodeTokenError(loggable=str(e), msg=msg)
+    except Exception as e:
+        msg = "An unknown error occured while decoding the token, make sure you are passing a valid and not expired token."
+        raise DecodeTokenError(loggable=str(e), msg=msg)
+
+    return decoded_token
+
+
+def validate_token_base(decoded_token: dict) -> bool:
+    """This function will say if the keys present inside the decoded_token are the same that is expected to have a valid token.
+
+    Args:
+        decoded_token (dict): decoded token in form of dictionary.
+
+    Raises:
+        ValidateTokenError: if the token does not respect the current token structure.
+
+    Returns:
+        bool: True if the decoded token structure is valid.
+    """
+    if TOKEN_FIELDS != set(decoded_token):
+        raise ValidateTokenError(
+            loggable="The given token keys does not match the keys in src.core.auth.TOKEN_FIELDS.",
+            msg="The given token has an invalid structure.",
+        )
+    return True
+
+
+def validate_refresh_token(decoded_token: dict) -> bool:
+    """This function will see if the token structure (present keys) are valid to then check if the "is_refresh" key is set to false.
+
+    Args:
+        decoded_token (dict): decoded token in form of dictionary.
+
+    Raises:
+        ValidateTokenError: if the provided token is not a refresh token.
+
+    Returns:
+        bool: True if "is_refresh" is True, False otherwise.
+    """
+    _ = validate_token_base(decoded_token)
+
+    if decoded_token["is_refresh"] is False:
+        raise ValidateTokenError(
+            loggable="The current token has the 'is_refresh' field set to false.",
+            msg="The given token is not a refresh token.",
+        )
+    return True
