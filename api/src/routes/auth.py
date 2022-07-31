@@ -6,9 +6,9 @@ from fastapi import APIRouter, Depends, Header, HTTPException, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordRequestForm
-from jose import jwt
-from jose.exceptions import ExpiredSignatureError, JWTError
+from jose.exceptions import JWTError
 from src.core import auth
+from src.core.exceptions import DecodeTokenError, ValidateTokenError
 from src.db.collections import user as db_user
 from src.helpers.container import CONTAINER
 from src.models.auth import AuthMessage
@@ -149,33 +149,19 @@ async def refresh(refresh_token: str | None = Header(default=None)):
 
     # Decode token.
     try:
-        decoded_token: dict = jwt.decode(
-            token=refresh_token,
-            key=environ["SECRET_KEY"],
-            algorithms=auth.JWT_CONFIG["algorithm"],
-        )
-    except ExpiredSignatureError as e:
-        msg = "The provided token is expired"
+        decoded_token = auth.decode_token(refresh_token)
+    except DecodeTokenError as e:
         # TODO: add logger.
-        raise HTTPException(status.HTTP_403_FORBIDDEN, detail=msg)
-    except JWTError as e:
-        msg = "The provided token is invalid, or cyphered with a different key."
-        # TODO: add logger.
-        raise HTTPException(status.HTTP_403_FORBIDDEN, detail=msg)
-    except Exception as e:
-        msg = "An unknown error occured while decoding the token, make sure you are passing a valid and not expired token."
-        # TODO: add logger.
-        raise HTTPException(status.HTTP_403_FORBIDDEN, detail=msg)
+        # print e.loggable.
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=e.msg)
 
-    # Make sure the token has correct structure.
-    if auth.TOKEN_FIELDS != set(decoded_token.keys()):
-        msg = "The provided token does not match the current schema, make sure you are pasing a toke with valid structure."
-        raise HTTPException(status.HTTP_403_FORBIDDEN, detail=msg)
-
-    # Make sure the token is a refresh token.
-    if decoded_token["is_refresh"] is False:
-        msg = "The provided token is not a refresh token, make sure to provide the corret token."
-        raise HTTPException(status.HTTP_403_FORBIDDEN, detail=msg)
+    # Validate the token.
+    try:
+        _ = auth.validate_refresh_token(decoded_token)
+    except ValidateTokenError as e:
+        # TODO: add logger.
+        # print e.loggable.
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=e.msg)
 
     # If username not in db raise exception.
     user_res = await db_user.User.find_one(
