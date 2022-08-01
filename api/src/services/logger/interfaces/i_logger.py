@@ -1,4 +1,4 @@
-from typing import Optional, Protocol, runtime_checkable
+from typing import Protocol, runtime_checkable
 
 
 @runtime_checkable
@@ -6,14 +6,6 @@ class ILogger(Protocol):
     """
     Interface where basic logging behaviour is defined.
     """
-
-    def add_logger(logger_name: str, configuration: Optional[str] = None) -> None:
-        """
-        Create a new logger with the given name.
-
-        Args:
-            logger_name (str): logger name.
-        """
 
     def file_config(config_file_path: str) -> None:
         """
