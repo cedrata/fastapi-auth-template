@@ -43,7 +43,9 @@ _LOGIN_POST_PARAMS: Final[Dict[Endpoint, Any]] = {
     responses=_LOGIN_POST_PARAMS[Endpoint.RESPONSES],
     description=_LOGIN_POST_PARAMS[Endpoint.DESCRIPTION],
 )
-async def login(request_form: OAuth2PasswordRequestForm = Depends()):
+async def login(
+    request_form: OAuth2PasswordRequestForm = Depends(),
+):
     logger = CONTAINER.get(ILogger)
     response: Any
     status_code: int
@@ -58,7 +60,9 @@ async def login(request_form: OAuth2PasswordRequestForm = Depends()):
     # The user does not exists.
 
     if user_res is None:
+        logger.warning("routes", f"{request_form.username} user not found in database.")
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, detail=error_message)
+
     # A projecton is not made because the password is required to check if the user has th
     user_projection = UserLogin(username=user_res.username, roles=user_res.roles)
 
@@ -69,6 +73,7 @@ async def login(request_form: OAuth2PasswordRequestForm = Depends()):
         request_form.password,
         user_res.password,
     ):
+        logger.warning("routes", f"Wrong password for {request_form.username}.")
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, detail=error_message)
 
     # The user exists.
@@ -78,7 +83,7 @@ async def login(request_form: OAuth2PasswordRequestForm = Depends()):
         refresh_timedelta = timedelta(minutes=auth.JWT_CONFIG["refresh_expiration"])
     except KeyError as e:
         msg = f"An error occured while retriving the tokens expiration times"
-        logger.error("auth", f"{msg}: {e}")
+        logger.error("routes", f"{msg}: {e}")
         raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
 
     # Generating access and refresh tokens.
@@ -99,11 +104,11 @@ async def login(request_form: OAuth2PasswordRequestForm = Depends()):
         )
     except KeyError as e:
         msg = f"An error occured while retriving the secret or the algorithm to encode the tokens"
-        logger.error("auth", f"{msg}: {e}")
+        logger.error("routes", f"{msg}: {e}")
         raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
     except JWTError as e:
         msg = f"An error occured while encoding the tokens"
-        logger.error("auth", f"{msg}: {e}")
+        logger.error("routes", f"{msg}: {e}")
         raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
 
     response = AuthMessage(
@@ -111,6 +116,9 @@ async def login(request_form: OAuth2PasswordRequestForm = Depends()):
     )
     status_code = status.HTTP_200_OK
 
+    logger.info(
+        "routes", f"Successfully generated token for {user_projection.username}"
+    )
     return JSONResponse(status_code=status_code, content=jsonable_encoder(response))
 
 
@@ -140,7 +148,9 @@ _REFRESH_POST_PARAMS: Final[Dict[Endpoint, Any]] = {
     responses=_REFRESH_POST_PARAMS[Endpoint.RESPONSES],
     description=_REFRESH_POST_PARAMS[Endpoint.DESCRIPTION],
 )
-async def refresh(refresh_token: str | None = Header(default=None)):
+async def refresh(
+    refresh_token: str | None = Header(default=None),
+):
     logger = CONTAINER.get(ILogger)
     response: Any
     status_code: int
@@ -150,17 +160,16 @@ async def refresh(refresh_token: str | None = Header(default=None)):
     # Decode token.
     try:
         decoded_token = auth.decode_token(refresh_token)
+        logger.debug("routes", f"Decoded token {decoded_token}")
     except DecodeTokenError as e:
-        # TODO: add logger.
-        # print e.loggable.
+        logger.warning("routes", e.loggable)
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=e.msg)
 
     # Validate the token.
     try:
         _ = auth.validate_refresh_token(decoded_token)
     except ValidateTokenError as e:
-        # TODO: add logger.
-        # print e.loggable.
+        logger.warning("routes", e.loggable)
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=e.msg)
 
     # If username not in db raise exception.
@@ -169,6 +178,9 @@ async def refresh(refresh_token: str | None = Header(default=None)):
     )
 
     if user_res is None:
+        logger.warning(
+            "routes", f"{decoded_token.get('username')} user not found in database."
+        )
         msg = "The token contains informations of an unexisting user."
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, detail=msg)
 
@@ -183,7 +195,7 @@ async def refresh(refresh_token: str | None = Header(default=None)):
         refresh_timedelta = timedelta(minutes=auth.JWT_CONFIG["refresh_expiration"])
     except KeyError as e:
         msg = f"An error occured while retriving the tokens expiration times"
-        logger.error("auth", f"{msg}: {e}")
+        logger.error("routes", f"{msg}: {e}")
         raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
 
     # Generating access and refresh tokens.
@@ -204,11 +216,11 @@ async def refresh(refresh_token: str | None = Header(default=None)):
         )
     except KeyError as e:
         msg = f"An error occured while retriving the secret or the algorithm to encode the tokens"
-        logger.error("auth", f"{msg}: {e}")
+        logger.error("routes", f"{msg}: {e}")
         raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
     except JWTError as e:
         msg = f"An error occured while encoding the tokens"
-        logger.error("auth", f"{msg}: {e}")
+        logger.error("routes", f"{msg}: {e}")
         raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
 
     # Generate new token pair.
@@ -219,4 +231,7 @@ async def refresh(refresh_token: str | None = Header(default=None)):
     )
     status_code = status.HTTP_200_OK
 
+    logger.info(
+        "routes", f"Successfully refreshed token for {user_projection.username}"
+    )
     return JSONResponse(status_code=status_code, content=jsonable_encoder(response))

@@ -19,7 +19,7 @@ def resolve(binder: Binder) -> None:
     """
 
     # Singletons instantiations
-    logger_config_file_path = join(environ["CONFIGS_DIR"], "log", "custom_log.yaml")
+    logger_config_file_path = join(environ["CONFIGS_DIR"], "log", "log_dev.yaml")
     logger = TimedLogger(config_file_path=logger_config_file_path)
     binder.bind(ILogger, to=logger, scope=singleton)
 
