@@ -21,7 +21,7 @@ ORANGE='\033[33;33m'
 if [ "$#" -lt 3 ]; then
     echo -e "${ORANGE}Usage: env.sh <configs-dir-absolute-path> <logging-dir-absolute-path> <dotenv-absolute-path>"
     echo "Interrupting."
-    return -1
+    exit -1
 fi
 
 # Making sure the arguments are absolute paths.
