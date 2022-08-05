@@ -64,7 +64,7 @@ async def login(
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, detail=msg)
 
     # A projecton is not made because the password is required to check if the user has th
-    user_projection = UserLoginProjection(username=user_res.username, roles=user_res.roles)
+    user_projection = UserLoginProjection(email=user_res.email ,username=user_res.username, roles=user_res.roles)
 
     # Check if the input password match the stored one,
     # but before doing so the password to check must be hashed, and then compared.
