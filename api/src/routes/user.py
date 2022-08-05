@@ -107,6 +107,9 @@ _REGISTER_ADMIN_POST_PARAMS: Final[Dict[Endpoint, Any]] = {
     },
     Endpoint.DESCRIPTION: "User registration for basic user, this will set the default user role to 'user', to let the use chose the roles use the /register-admin endpoint",
     Endpoint.DEPENDENCIES: [Depends(require_admin)],
+    Endpoint.TAGS: [
+        Role.ADMIN.value.capitalize()
+    ]
 }
 
 
@@ -116,6 +119,7 @@ _REGISTER_ADMIN_POST_PARAMS: Final[Dict[Endpoint, Any]] = {
     responses=_REGISTER_ADMIN_POST_PARAMS[Endpoint.RESPONSES],
     description=_REGISTER_ADMIN_POST_PARAMS[Endpoint.DESCRIPTION],
     dependencies=_REGISTER_ADMIN_POST_PARAMS[Endpoint.DEPENDENCIES],
+    tags=_REGISTER_ADMIN_POST_PARAMS[Endpoint.TAGS]
 )
 async def register_admin(
     user_registration: UserAdminRegistration, _: str = Depends(OAUTH2_SCHEME)
