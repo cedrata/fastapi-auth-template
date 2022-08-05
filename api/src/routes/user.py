@@ -1,16 +1,17 @@
 from datetime import datetime
 from typing import Any, Dict, Final
 
-from fastapi import APIRouter, Depends, HTTPException, Header, status
+from fastapi import APIRouter, Depends, Header, HTTPException, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from pymongo.errors import DuplicateKeyError
-from src.core.auth import OAUTH2_SCHEME
+from src.core.auth import OAUTH2_SCHEME, hash_password
 from src.db.collections.user import User as UserCollection
 from src.helpers.container import CONTAINER
 from src.models.commons import BaseMessage, HttpExceptionMessage
 from src.models.user import Role, UserAdminRegistration, UserRegistration
+from src.routes.dependencies import require_admin
 from src.routes.enums.commons import Endpoint
 from src.services.logger.interfaces.i_logger import ILogger
 
@@ -84,11 +85,6 @@ async def register(user_registration: UserRegistration):
     return JSONResponse(status_code=status_code, content=jsonable_encoder(response))
 
 
-async def is_admin(authorization: str | None = Header(default=None)):
-    if authorization is None:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
-
-
 _REGISTER_ADMIN_POST_PARAMS: Final[Dict[Endpoint, Any]] = {
     Endpoint.RESPONSE_MODEL: BaseMessage,
     Endpoint.RESPONSES: {
@@ -110,7 +106,7 @@ _REGISTER_ADMIN_POST_PARAMS: Final[Dict[Endpoint, Any]] = {
         },
     },
     Endpoint.DESCRIPTION: "User registration for basic user, this will set the default user role to 'user', to let the use chose the roles use the /register-admin endpoint",
-    Endpoint.DEPENDENCIES: [Depends(is_admin)],
+    Endpoint.DEPENDENCIES: [Depends(require_admin)],
 }
 
 
@@ -137,7 +133,7 @@ async def register_admin(
     user = UserCollection(
         email=user_registration.email,
         username=user_registration.username,
-        password=user_registration.password,
+        password=hash_password(user_registration.password),
         roles=user_registration.roles,
         creation=now_date,
         last_update=now_date,
