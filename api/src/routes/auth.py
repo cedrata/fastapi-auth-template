@@ -187,7 +187,7 @@ async def refresh(
     # The token is valid and is about an existing user, generate a new token pair.
 
     # A projecton is not made because the password is required to check if the user has th
-    user_projection = UserLoginProjection(username=user_res.username, roles=user_res.roles)
+    user_projection = UserLoginProjection(email=user_res.email, username=user_res.username, roles=user_res.roles)
 
     # Converting expriation times to timedelta.
     try:
