@@ -5,8 +5,8 @@ from beanie import Document, Indexed
 
 
 class User(Document):
-    email: Indexed(str)
-    username: Indexed(str)
+    email: Indexed(str, unique=True)
+    username: Indexed(str, unique=True)
     password: str
     roles: List[str]
     creation: datetime
