@@ -39,7 +39,7 @@ except Exception as e:
     )
     sys.exit()
 
-TOKEN_FIELDS: Final[set] = {"username", "roles", "exp", "is_refresh"}
+TOKEN_FIELDS: Final[set] = {"email", "username", "roles", "exp", "is_refresh"}
 
 
 def hash_password(password: str) -> str:
