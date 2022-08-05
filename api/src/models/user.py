@@ -1,7 +1,13 @@
 import re
+from enum import Enum
 from typing import List
 
 from pydantic import BaseModel, EmailStr, Field, validator
+
+
+class Role(str, Enum):
+    ADMIN = "admin"
+    USER = "user"
 
 
 class BaseUser(BaseModel):
@@ -33,7 +39,15 @@ class BaseUser(BaseModel):
 class BaseUserRoles(BaseModel):
     """Class for representing and validate the user roles."""
 
-    roles: List[str] = Field(..., description="Collection of the user roles.")
+    roles: List[Role] = Field(..., description="Collection of the user roles.")
+
+    @validator("roles")
+    def roles_validation(cls, roles):
+        if len(roles) == 0:
+            raise ValueError(
+                "The roles validation was not succesful, at least a role must be present."
+            )
+        return roles
 
 
 class UserRegistration(BaseUser):
