@@ -17,4 +17,4 @@ _CONNECTION_STRING = f"mongodb://{_DATABASE_USERNAME}:{_DATABASE_PASSOWRD}@{_DAT
 
 async def build_client() -> None:
     client = AsyncIOMotorClient(_CONNECTION_STRING)
-    await init_beanie(client[_DATABASE_NAME], document_models=[user.User])
+    await init_beanie(client[_DATABASE_NAME], document_models=[user.User], allow_index_dropping=True)
