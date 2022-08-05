@@ -76,9 +76,5 @@ echo "SECRET_KEY=${SECRET_KEY}" > $DOTENV
 echo "CONFIGS_DIR=${CONFIGS_DIR}" >> $DOTENV
 echo "LOGGING_DIR=${LOGGING_DIR}" >> $DOTENV
 echo -e "${GREEN}$DOTENV file created succesfully."
-echo -e "${DEFAULT_COLOUR} Now you can execute the following command to set the environement variables: " 
-echo ""
-echo -e '\tset -a; source PATH TO DOTENV; set +a;'
-echo ""
 
 echo -e "${GREEN}Success, you're ready to work :)"
