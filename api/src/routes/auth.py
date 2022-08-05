@@ -13,7 +13,7 @@ from src.db.collections import user as db_user
 from src.helpers.container import CONTAINER
 from src.models.auth import AuthMessage
 from src.models.commons import HttpExceptionMessage
-from src.models.user import UserLogin
+from src.models.user import UserLoginProjection
 from src.routes.enums.commons import Endpoint
 from src.services.logger.interfaces.i_logger import ILogger
 
@@ -55,16 +55,16 @@ async def login(
         db_user.User.username == request_form.username
     )
 
-    error_message = "Invalid username or password"
+    msg = "Invalid username or password"
     # Search if user exists in DB.
     # The user does not exists.
 
     if user_res is None:
         logger.warning("routes", f"{request_form.username} user not found in database.")
-        raise HTTPException(status.HTTP_401_UNAUTHORIZED, detail=error_message)
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, detail=msg)
 
     # A projecton is not made because the password is required to check if the user has th
-    user_projection = UserLogin(username=user_res.username, roles=user_res.roles)
+    user_projection = UserLoginProjection(username=user_res.username, roles=user_res.roles)
 
     # Check if the input password match the stored one,
     # but before doing so the password to check must be hashed, and then compared.
@@ -74,7 +74,7 @@ async def login(
         user_res.password,
     ):
         logger.warning("routes", f"Wrong password for {request_form.username}.")
-        raise HTTPException(status.HTTP_401_UNAUTHORIZED, detail=error_message)
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, detail=msg)
 
     # The user exists.
     # Converting expriation times to timedelta.
@@ -187,7 +187,7 @@ async def refresh(
     # The token is valid and is about an existing user, generate a new token pair.
 
     # A projecton is not made because the password is required to check if the user has th
-    user_projection = UserLogin(username=user_res.username, roles=user_res.roles)
+    user_projection = UserLoginProjection(username=user_res.username, roles=user_res.roles)
 
     # Converting expriation times to timedelta.
     try:
