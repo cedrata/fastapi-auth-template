@@ -1,3 +1,4 @@
+from datetime import datetime
 import re
 from enum import Enum
 from typing import List
@@ -62,7 +63,14 @@ class UserAdminRegistration(BaseUser, BaseUserRoles):
     password: str = Field(..., description="User password")
 
 
-class UserLoginProjection(BaseUser, BaseUserRoles):
+class UserLogin(BaseUser, BaseUserRoles):
     """Class for projection with only username and roles (other attributes if required, no password), from the db users collection."""
 
     pass
+
+
+class UserPartialDetails(BaseUser, BaseUserRoles):
+    """Class for projection containing partial user details like: email, username, roles, craetion and last update dates."""
+
+    creation: datetime
+    last_update: datetime
