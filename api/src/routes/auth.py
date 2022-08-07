@@ -7,13 +7,14 @@ from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from jose.exceptions import JWTError
+from pydantic import BaseModel
 from src.core import auth
 from src.core.exceptions import DecodeTokenError, ValidateTokenError
 from src.db.collections import user as db_user
 from src.helpers.container import CONTAINER
 from src.models.auth import AuthMessage
 from src.models.commons import HttpExceptionMessage
-from src.models.user import UserLoginProjection
+from src.models.user import UserLogin
 from src.routes.enums.commons import Endpoint
 from src.services.logger.interfaces.i_logger import ILogger
 
@@ -47,7 +48,7 @@ async def login(
     request_form: OAuth2PasswordRequestForm = Depends(),
 ):
     logger = CONTAINER.get(ILogger)
-    response: Any
+    response: BaseModel
     status_code: int
 
     # Query to get the requested user.
@@ -64,7 +65,9 @@ async def login(
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, detail=msg)
 
     # A projecton is not made because the password is required to check if the user has th
-    user_projection = UserLoginProjection(email=user_res.email ,username=user_res.username, roles=user_res.roles)
+    user_projection = UserLogin(
+        email=user_res.email, username=user_res.username, roles=user_res.roles
+    )
 
     # Check if the input password match the stored one,
     # but before doing so the password to check must be hashed, and then compared.
@@ -152,7 +155,7 @@ async def refresh(
     refresh_token: str | None = Header(default=None),
 ):
     logger = CONTAINER.get(ILogger)
-    response: Any
+    response: BaseModel
     status_code: int
     decoded_token: dict
     msg: str
@@ -187,7 +190,9 @@ async def refresh(
     # The token is valid and is about an existing user, generate a new token pair.
 
     # A projecton is not made because the password is required to check if the user has th
-    user_projection = UserLoginProjection(email=user_res.email, username=user_res.username, roles=user_res.roles)
+    user_projection = UserLogin(
+        email=user_res.email, username=user_res.username, roles=user_res.roles
+    )
 
     # Converting expriation times to timedelta.
     try:
