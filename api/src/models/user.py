@@ -11,20 +11,10 @@ class Role(str, Enum):
     USER = "user"
 
 
-class BaseUser(BaseModel):
-    """Class for representing and validate the atomic part of an user."""
+class BaseUsername(BaseModel):
+    """Class for representing and validating the users username."""
 
-    email: EmailStr = Field(..., description="User email")
     username: str = Field(..., description="User username")
-
-    @validator("email")
-    def email_validation(cls, email):
-        try:
-            return EmailStr.validate(email)
-        except Exception:
-            raise ValueError(
-                "The email validation was not succesful, the email may be invalid."
-            )
 
     @validator("username")
     def username_validation(cls, username):
@@ -35,6 +25,21 @@ class BaseUser(BaseModel):
                 "The username validation was not succesful, the username can only contain alfanumerical chars underscores and dots."
             )
         return username
+
+
+class BaseUser(BaseUsername):
+    """Class for representing and validate the users email and username."""
+
+    email: EmailStr = Field(..., description="User email")
+
+    @validator("email")
+    def email_validation(cls, email):
+        try:
+            return EmailStr.validate(email)
+        except Exception:
+            raise ValueError(
+                "The email validation was not succesful, the email may be invalid."
+            )
 
 
 class BaseUserRoles(BaseModel):
@@ -57,7 +62,7 @@ class UserRegistration(BaseUser):
     password: str = Field(..., description="User password")
 
 
-class UserAdminRegistration(BaseUser, BaseUserRoles):
+class UserRegistrationAdmin(BaseUser, BaseUserRoles):
     """Class for representin the user registration for admin user, requires at least one role."""
 
     password: str = Field(..., description="User password")
@@ -69,8 +74,14 @@ class UserLogin(BaseUser, BaseUserRoles):
     pass
 
 
-class UserPartialDetails(BaseUser, BaseUserRoles):
-    """Class for projection containing partial user details like: email, username, roles, craetion and last update dates."""
+class UserPartialDetails(BaseUsername, BaseUserRoles):
+    """Class for projection containing partial user details: username, roles and creation date."""
+
+    creation: datetime
+
+
+class UserPartialDetailsAdmin(BaseUser, BaseUserRoles):
+    """Class for projection containing partial user details: email, username, roles, craetion and last update dates."""
 
     creation: datetime
     last_update: datetime
