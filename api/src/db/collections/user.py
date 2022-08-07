@@ -12,6 +12,5 @@ class User(Document):
     creation: datetime
     last_update: datetime
 
-
     class Settings:
         name = "users"

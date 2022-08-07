@@ -1,4 +1,3 @@
-from tkinter import W
 from pydantic import BaseModel
 
 

@@ -11,7 +11,7 @@ from src.db.collections.user import User as UserCollection
 from src.helpers.container import CONTAINER
 from src.models.commons import BaseMessage, HttpExceptionMessage
 from src.models.user import Role, UserAdminRegistration, UserRegistration
-from src.routes.dependencies import require_admin
+from src.routes.validation import require_admin
 from src.routes.enums.commons import Endpoint
 from src.services.logger.interfaces.i_logger import ILogger
 
@@ -107,9 +107,7 @@ _REGISTER_ADMIN_POST_PARAMS: Final[Dict[Endpoint, Any]] = {
     },
     Endpoint.DESCRIPTION: "User registration for basic user, this will set the default user role to 'user', to let the use chose the roles use the /register-admin endpoint",
     Endpoint.DEPENDENCIES: [Depends(require_admin)],
-    Endpoint.TAGS: [
-        Role.ADMIN.value.capitalize()
-    ]
+    Endpoint.TAGS: [Role.ADMIN.value.capitalize()],
 }
 
 
@@ -119,7 +117,7 @@ _REGISTER_ADMIN_POST_PARAMS: Final[Dict[Endpoint, Any]] = {
     responses=_REGISTER_ADMIN_POST_PARAMS[Endpoint.RESPONSES],
     description=_REGISTER_ADMIN_POST_PARAMS[Endpoint.DESCRIPTION],
     dependencies=_REGISTER_ADMIN_POST_PARAMS[Endpoint.DEPENDENCIES],
-    tags=_REGISTER_ADMIN_POST_PARAMS[Endpoint.TAGS]
+    tags=_REGISTER_ADMIN_POST_PARAMS[Endpoint.TAGS],
 )
 async def register_admin(
     user_registration: UserAdminRegistration, _: str = Depends(OAUTH2_SCHEME)
