@@ -255,6 +255,7 @@ _GET_ALL_USERS_ADMIN_PARAMS: Final[Dict[Endpoint, Any]] = {
 }
 
 
+# TODO: One single /all endpoint, too much redoundancy now.
 @router.get(
     "/all-admin",
     response_model=_GET_ALL_USERS_ADMIN_PARAMS[Endpoint.RESPONSE_MODEL],
@@ -347,5 +348,57 @@ async def get_users_count(_: str = Depends(OAUTH2_SCHEME)):
     logger.info(
         "routes",
         f"Success returning the total number of users documents in the db.",
+    )
+    return JSONResponse(status_code=status_code, content=jsonable_encoder(response))
+
+
+_GET_USER_BY_ID_PARAMS: Final[Dict[Endpoint, Any]] = {
+    Endpoint.RESPONSE_MODEL: List[UserPartialDetails],
+    Endpoint.RESPONSES: {
+        status.HTTP_401_UNAUTHORIZED: {
+            "model": HttpExceptionMessage,
+            "description": "Unauthorized",  # Exception raised by the require_admin function (see Endpoint.DEPENDENCIES).
+        },
+        status.HTTP_500_INTERNAL_SERVER_ERROR: {
+            "model": HttpExceptionMessage,
+            "description": "An unknown error occured while retriving the user",
+        },
+    },
+    Endpoint.DESCRIPTION: "Get user parial details from the db given the username or email. To get full details run admin endpoint.",
+}
+
+
+@router.get(
+    "/{user_id}",
+    response_model=_GET_USER_BY_ID_PARAMS[Endpoint.RESPONSE_MODEL],
+    responses=_GET_USER_BY_ID_PARAMS[Endpoint.RESPONSES],
+    description=_GET_USER_BY_ID_PARAMS[Endpoint.DESCRIPTION],
+)
+async def get_all_users(user_id: str, _: str = Depends(OAUTH2_SCHEME)):
+    logger = CONTAINER.get(ILogger)
+    status_code: int
+    response: BaseModel
+
+    logger.info(
+        "routes",
+        f"Returning the in the db: username/email={user_id}.",
+    )
+
+    try:
+        response = await UserCollection.find_one(
+            UserCollection.username == user_id or UserCollection.email == user_id,
+            projection_model=UserPartialDetails,
+        )
+    except Exception as e:
+        logger.error(
+            "routes", f"An unknown exception occured while fetcthing the user: {e}"
+        )
+        raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    status_code = status.HTTP_200_OK
+
+    logger.info(
+        "routes",
+        f"Success returning the serched user.",
     )
     return JSONResponse(status_code=status_code, content=jsonable_encoder(response))
