@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Any, Dict, Final, List
 
 from beanie.odm.enums import SortDirection
-from fastapi import APIRouter, Depends, Header, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
@@ -19,7 +19,7 @@ from src.models.user import (
     UserRegistrationAdmin,
 )
 from src.routes.enums.commons import Endpoint
-from src.routes.validation import require_admin
+from src.routes.validation import is_admin, require_admin
 from src.services.logger.interfaces.i_logger import ILogger
 
 # Router instantiation.
@@ -119,25 +119,27 @@ _REGISTER_ADMIN_POST_PARAMS: Final[Dict[Endpoint, Any]] = {
 
 
 @router.post(
-    "/register-admin",
+    "/register-roles",
     response_model=_REGISTER_ADMIN_POST_PARAMS[Endpoint.RESPONSE_MODEL],
     responses=_REGISTER_ADMIN_POST_PARAMS[Endpoint.RESPONSES],
     description=_REGISTER_ADMIN_POST_PARAMS[Endpoint.DESCRIPTION],
     dependencies=_REGISTER_ADMIN_POST_PARAMS[Endpoint.DEPENDENCIES],
-    # tags=_REGISTER_ADMIN_POST_PARAMS[Endpoint.TAGS],
 )
 async def register_admin(
-    user_registration: UserRegistrationAdmin, _: str = Depends(OAUTH2_SCHEME)
+    user_registration: UserRegistrationAdmin, admin: str = Depends(is_admin)
 ):
     logger = CONTAINER.get(ILogger)
     status_code: int
     response: BaseModel
     now_date = datetime.utcnow()
 
+    if not admin:
+        raise HTTPException(status.HTTP_403_FORBIDDEN)
+
     # Document creation.
     logger.info(
         "routes",
-        f"(Admin) Document creation for user having {user_registration.username} as username and roles {user_registration.roles}.",
+        f"Document creation for user having {user_registration.username} as username and roles {user_registration.roles}.",
     )
     user = UserCollection(
         email=user_registration.email,
@@ -174,7 +176,7 @@ async def register_admin(
 
 
 _GET_ALL_USERS_PARAMS: Final[Dict[Endpoint, Any]] = {
-    Endpoint.RESPONSE_MODEL: List[UserPartialDetails],
+    Endpoint.RESPONSE_MODEL: List[UserPartialDetails | UserPartialDetailsAdmin],
     Endpoint.RESPONSES: {
         status.HTTP_401_UNAUTHORIZED: {
             "model": HttpExceptionMessage,
@@ -200,11 +202,17 @@ _GET_ALL_USERS_PARAMS: Final[Dict[Endpoint, Any]] = {
     description=_GET_ALL_USERS_PARAMS[Endpoint.DESCRIPTION],
 )
 async def get_all_users(
-    limit: int | None = None, skip: int | None = None, _: str = Depends(OAUTH2_SCHEME)
+    limit: int | None = None, skip: int | None = None, admin: bool = Depends(is_admin)
 ):
     logger = CONTAINER.get(ILogger)
     status_code: int
     response: BaseModel
+    projection: BaseModel
+
+    if not admin:
+        projection = UserPartialDetails
+    else:
+        projection = UserPartialDetailsAdmin
 
     logger.info(
         "routes",
@@ -213,72 +221,7 @@ async def get_all_users(
 
     try:
         response = await UserCollection.find_all(
-            projection_model=UserPartialDetails,
-            limit=limit,
-            skip=skip,
-            sort=[("username", SortDirection.ASCENDING)],
-        ).to_list()
-    except Exception as e:
-        logger.error(
-            "routes", f"An unknown exception occured while fetcthing the users: {e}"
-        )
-        raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-    status_code = status.HTTP_200_OK
-
-    logger.info(
-        "routes",
-        f"Success returning all the users.",
-    )
-    return JSONResponse(status_code=status_code, content=jsonable_encoder(response))
-
-
-_GET_ALL_USERS_ADMIN_PARAMS: Final[Dict[Endpoint, Any]] = {
-    Endpoint.RESPONSE_MODEL: List[UserPartialDetailsAdmin],
-    Endpoint.RESPONSES: {
-        status.HTTP_401_UNAUTHORIZED: {
-            "model": HttpExceptionMessage,
-            "description": "Unauthorized",  # Exception raised by the require_admin function (see Endpoint.DEPENDENCIES).
-        },
-        status.HTTP_403_FORBIDDEN: {
-            "model": HttpExceptionMessage,
-            "description": f"Forbidden access, {Role.ADMIN} role required",  # Exception raised by the require_admin function (see Endpoint.DEPENDENCIES).
-        },
-        status.HTTP_500_INTERNAL_SERVER_ERROR: {
-            "model": HttpExceptionMessage,
-            "description": "An unknown error occured while registering the user",
-        },
-    },
-    Endpoint.DESCRIPTION: "Get all users with admin parial details from the db. If needed is possible to limit returned entities and skip the required amount. This endpoint execution is limited to users having the admin role.",
-    Endpoint.DEPENDENCIES: [Depends(require_admin)],
-    # Endpoint.TAGS: [Role.ADMIN.value.capitalize()],
-}
-
-
-# TODO: One single /all endpoint, too much redoundancy now.
-@router.get(
-    "/all-admin",
-    response_model=_GET_ALL_USERS_ADMIN_PARAMS[Endpoint.RESPONSE_MODEL],
-    responses=_GET_ALL_USERS_ADMIN_PARAMS[Endpoint.RESPONSES],
-    description=_GET_ALL_USERS_ADMIN_PARAMS[Endpoint.DESCRIPTION],
-    dependencies=_GET_ALL_USERS_ADMIN_PARAMS[Endpoint.DEPENDENCIES],
-    # tags=_GET_ALL_USERS_ADMIN_PARAMS[Endpoint.TAGS],
-)
-async def get_all_users(
-    limit: int | None = None, skip: int | None = None, _: str = Depends(OAUTH2_SCHEME)
-):
-    logger = CONTAINER.get(ILogger)
-    status_code: int
-    response: BaseModel
-
-    logger.info(
-        "routes",
-        f"(Admin) Returning the users in the db: limit={limit} and skip={skip}.",
-    )
-
-    try:
-        response = await UserCollection.find_all(
-            projection_model=UserPartialDetailsAdmin,
+            projection_model=projection,
             limit=limit,
             skip=skip,
             sort=[("username", SortDirection.ASCENDING)],
@@ -353,7 +296,7 @@ async def get_users_count(_: str = Depends(OAUTH2_SCHEME)):
 
 
 _GET_USER_BY_ID_PARAMS: Final[Dict[Endpoint, Any]] = {
-    Endpoint.RESPONSE_MODEL: List[UserPartialDetails],
+    Endpoint.RESPONSE_MODEL: List[UserPartialDetails | UserPartialDetailsAdmin],
     Endpoint.RESPONSES: {
         status.HTTP_401_UNAUTHORIZED: {
             "model": HttpExceptionMessage,
@@ -364,30 +307,36 @@ _GET_USER_BY_ID_PARAMS: Final[Dict[Endpoint, Any]] = {
             "description": "An unknown error occured while retriving the user",
         },
     },
-    Endpoint.DESCRIPTION: "Get user parial details from the db given the username or email. To get full details run admin endpoint.",
+    Endpoint.DESCRIPTION: "Get user parial details from the db given the username. To get full details run admin endpoint.",
 }
 
 
 @router.get(
-    "/{user_id}",
+    "/{username}",
     response_model=_GET_USER_BY_ID_PARAMS[Endpoint.RESPONSE_MODEL],
     responses=_GET_USER_BY_ID_PARAMS[Endpoint.RESPONSES],
     description=_GET_USER_BY_ID_PARAMS[Endpoint.DESCRIPTION],
 )
-async def get_all_users(user_id: str, _: str = Depends(OAUTH2_SCHEME)):
+async def get_user_by_username(username: str, admin: bool = Depends(is_admin)):
     logger = CONTAINER.get(ILogger)
     status_code: int
     response: BaseModel
+    projection: BaseModel
+
+    if not admin:
+        projection = UserPartialDetails
+    else:
+        projection = UserPartialDetailsAdmin
 
     logger.info(
         "routes",
-        f"Returning the in the db: username/email={user_id}.",
+        f"Returning the in the db: username={username}.",
     )
 
     try:
         response = await UserCollection.find_one(
-            UserCollection.username == user_id or UserCollection.email == user_id,
-            projection_model=UserPartialDetails,
+            UserCollection.username == username,
+            projection_model=projection,
         )
     except Exception as e:
         logger.error(

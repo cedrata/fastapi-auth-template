@@ -2,14 +2,15 @@ import sys
 from datetime import datetime, timedelta
 from os import environ
 from os.path import join
-from typing import Any, Dict, Final
+from typing import Any, Dict, Final, List
 
 from fastapi.security import OAuth2PasswordBearer
 from jose import jwt
 from jose.exceptions import ExpiredSignatureError, JWTError
 from passlib.context import CryptContext
-from src.core.exceptions import DecodeTokenError, ValidateTokenError
+from src.core.exceptions import DecodeTokenError
 from src.helpers.container import CONTAINER
+from src.models.user import Role
 from src.services.logger.interfaces.i_logger import ILogger
 from yaml import safe_load
 
@@ -61,6 +62,7 @@ def create_token(
     """Return a token for the given data, this function can be used to return both access and refresh tokens.
     !!!IMPORTANT!!!
     If "data" argument contains a password make sure it is hashed and not plain!!!
+    The password should not be contained in the token anyway.
 
     Args:
         data (dict): data to encode in jwt.
@@ -113,43 +115,60 @@ def decode_token(encoded_token: str) -> dict:
     return decoded_token
 
 
-def validate_token_base(decoded_token: dict) -> bool:
+def valid_token(decoded_token: dict) -> bool:
     """This function will say if the keys present inside the decoded_token are the same that is expected to have a valid token.
 
     Args:
         decoded_token (dict): decoded token in form of dictionary.
 
-    Raises:
-        ValidateTokenError: if the token does not respect the current token structure.
-
     Returns:
         bool: True if the decoded token structure is valid.
     """
     if TOKEN_FIELDS != set(decoded_token):
-        raise ValidateTokenError(
-            loggable="The given token keys does not match the keys in src.core.auth.TOKEN_FIELDS.",
-            msg="The given token has an invalid structure.",
-        )
+        return False
     return True
 
 
-def validate_refresh_token(decoded_token: dict) -> bool:
+def valid_refresh_token(decoded_token: dict) -> bool:
+    """This function will see if the token structure (present keys) are valid to then check if the "is_refresh" key is set to true.
+
+    Args:
+        decoded_token (dict): decoded token in form of dictionary.
+
+    Returns:
+        bool: True if "is_refresh" is True, False otherwise.
+    """
+    if not valid_token(decoded_token):
+        return False
+    if decoded_token["is_refresh"] is False:
+        return False
+    return True
+
+
+def valid_access_token(decoded_token: dict) -> bool:
     """This function will see if the token structure (present keys) are valid to then check if the "is_refresh" key is set to false.
 
     Args:
         decoded_token (dict): decoded token in form of dictionary.
 
-    Raises:
-        ValidateTokenError: if the provided token is not a refresh token.
+    Returns:
+        bool: True if "is_refresh" is False, False otherwise.
+    """
+    if not valid_token(decoded_token):
+        return False
+    if decoded_token["is_refresh"] is True:
+        return False
+    return True
+
+
+def has_roles(user_roles: List[Role], required_roles: List[Role]) -> bool:
+    """This function will check efficiently if the user roles have at least one of the required roles.
+
+    Args:
+        user_roles (List[Role]): user roles.
+        required_roles (List[Role]): required roles.
 
     Returns:
-        bool: True if "is_refresh" is True, False otherwise.
+        bool: True if at least one of the user roles is contained in the required roles.
     """
-    _ = validate_token_base(decoded_token)
-
-    if decoded_token["is_refresh"] is False:
-        raise ValidateTokenError(
-            loggable="The current token has the 'is_refresh' field set to false.",
-            msg="The given token is not a refresh token.",
-        )
-    return True
+    return bool(set(user_roles) & set(required_roles))

@@ -2,8 +2,7 @@ import json
 
 import pytest
 from httpx import AsyncClient
-from src.routes.auth import login
-from tests import build_db_client, fastapi_app, BASE_URL
+from tests import BASE_URL, build_db_client, fastapi_app, user_login
 
 
 @pytest.mark.asyncio
@@ -139,5 +138,5 @@ async def test_invalid_token_structure_refresh():
     assert response.status_code == 403
 
 
-# Maybe a test for bad payload ca be added, but the moment I am too lazy to do it. 
+# Maybe a test for bad payload ca be added, but the moment I am too lazy to do it.
 # Honestly it looks like it works :D.

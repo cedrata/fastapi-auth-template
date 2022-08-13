@@ -1,13 +1,69 @@
-from fastapi import Header, HTTPException, status
-from src.core import auth
-from src.core.exceptions import DecodeTokenError, ValidateTokenError
-from src.db.collections import user as db_user
+from typing import Any, Final
+
+import typesentry
+from fastapi import Depends, HTTPException, status
+from src.core.auth import OAUTH2_SCHEME, decode_token, has_roles, valid_access_token
+from src.core.exceptions import DecodeTokenError
 from src.helpers.container import CONTAINER
 from src.models.user import Role
 from src.services.logger.interfaces.i_logger import ILogger
 
+_TC: Final[typesentry.Config] = typesentry.Config()
+IS_TYPED: Final[Any] = _TC.is_type
 
-async def require_admin(authorization: str | None = Header(default=None)) -> None:
+
+def is_authorized(token: str = Depends(OAUTH2_SCHEME)) -> bool:
+    """This function will check if an user is authorized or not.
+
+    Args:
+        token (str, optional): Token read from the header. Defaults to Depends(OAUTH2_SCHEME).
+
+    Raises:
+        HTTPException: When the token is invalid an exception is thrown.
+
+    Returns:
+        bool: True if the user is authenticated (valid token), False otherwise.
+    """
+    logger = CONTAINER.get(ILogger)
+    decoded_token: dict
+    try:
+        decoded_token = decode_token(token)
+    except DecodeTokenError as e:
+        logger.warning("routes", e.loggable)
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, detail=e.msg)
+    return valid_access_token(decoded_token)
+
+
+def is_admin(token: str = Depends(OAUTH2_SCHEME)) -> bool:
+    """This function will check if an user is authorized and has admin role.
+
+    Args:
+        token (str, optional): Token read from the header. Defaults to Depends(OAUTH2_SCHEME).
+
+    Raises:
+        HTTPException: When the token is invalid or missing an exception is thrown.
+
+    Returns:
+        bool: True when the user is authenticated and is admin, False when is authenticated but not admin.
+    """
+    logger = CONTAINER.get(ILogger)
+    decoded_token: dict
+    try:
+        decoded_token = decode_token(token)
+    except DecodeTokenError as e:
+        logger.warning("routes", e.loggable)
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, detail=e.msg)
+
+    if not valid_access_token(decoded_token):
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED)
+
+    if not has_roles(decoded_token["roles"], [Role.ADMIN]):
+        return False
+
+    return True
+
+
+async def require_admin(token: str = Depends(OAUTH2_SCHEME)) -> None:
     """This function aim to check if a user has the admin role. If not an HttpException will be raised.
 
     Args:
@@ -18,44 +74,17 @@ async def require_admin(authorization: str | None = Header(default=None)) -> Non
     """
 
     logger = CONTAINER.get(ILogger)
-
-    if authorization is None:
-        raise HTTPException(status.HTTP_401_UNAUTHORIZED)
-
-    # The token is a bearer token, so it will be "Bearer somelongstring".
-    # Tha string must be splitted on whitespace and only the element at index one
-    # will be the jwt token.
-    token = authorization.split(" ")[1]
     decoded_token: dict
-
-    # Decode token.
     try:
-        decoded_token = auth.decode_token(token)
-        is_token_valid = auth.validate_token_base(decoded_token)
-        if not is_token_valid:
-            raise Exception
-    except (DecodeTokenError, ValidateTokenError) as e:
+        decoded_token = decode_token(token)
+    except DecodeTokenError as e:
         logger.warning("routes", e.loggable)
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, detail=e.msg)
-    except Exception as e:
-        logger.warning("routes", e.loggable)
+
+    if not valid_access_token(decoded_token):
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED)
+
+    if not has_roles(decoded_token["roles"], [Role.ADMIN]):
         raise HTTPException(
-            status.HTTP_500_INTERNAL_SERVER_ERROR,
-            "An unknown error occured while validating the token.",
+            status.HTTP_403_FORBIDDEN, detail="Forbiddent access, required role: ADMIN"
         )
-
-    # Get the user from the db and see if given fields match.
-    if Role.ADMIN.value not in decoded_token["roles"]:
-        msg = f"The user may not exist or miss the {Role.ADMIN.value} role."
-        logger.warning("routes", msg)
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=msg)
-
-    user_res = await db_user.User.find_one(
-        db_user.User.username == decoded_token["username"],
-        db_user.User.email == decoded_token["email"],
-        db_user.User.roles == decoded_token["roles"],
-    )
-    if user_res is None:
-        msg = f"The user may not exist or miss the {Role.ADMIN.value} role."
-        logger.warning("routes", msg)
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=msg)

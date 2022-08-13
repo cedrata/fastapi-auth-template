@@ -170,7 +170,7 @@ async def refresh(
 
     # Validate the token.
     try:
-        _ = auth.validate_refresh_token(decoded_token)
+        _ = auth.valid_refresh_token(decoded_token)
     except ValidateTokenError as e:
         logger.warning("routes", e.loggable)
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=e.msg)
