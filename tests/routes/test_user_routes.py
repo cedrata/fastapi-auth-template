@@ -1,11 +1,12 @@
 from datetime import datetime
+from json import JSONDecodeError
 from typing import List
 
 import pytest
 from httpx import AsyncClient
 from pydantic import parse_raw_as
 from src.db.collections.user import User
-from src.models.user import UserPartialDetails, UserPartialDetailsAdmin
+from src.models.user import CurrentUserDetails, UserPartialDetails, UserPartialDetailsAdmin
 from src.routes.validation import IS_TYPED
 from tests import BASE_URL, admin_login, build_db_client, fastapi_app, user_login
 
@@ -386,3 +387,29 @@ async def test_get_user_by_id_username_as_admin():
 
     found = parse_raw_as(UserPartialDetailsAdmin, response.text)
     assert found.username == username
+
+
+@pytest.mark.asyncio
+async def test_get_current_user():
+
+    # DB connection.
+    await build_db_client()
+
+    # Execute login.
+    login_response = await user_login()
+
+    async with AsyncClient(app=fastapi_app, base_url=BASE_URL) as ac:
+        response = await ac.get(
+            f"/user/me",
+            headers={
+                "Authorization": f"{login_response.token_type} {login_response.access_token}"
+            },
+        )
+
+    assert response.status_code == 200
+
+    try:
+        found = parse_raw_as(CurrentUserDetails, response.text)
+        assert found.username == "user" # The login has made with admin user.
+    except JSONDecodeError:
+        raise AssertionError(f"Impossible to parse to {CurrentUserDetails.__name__} json: {response.text}.")

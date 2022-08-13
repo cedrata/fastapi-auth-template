@@ -312,7 +312,7 @@ _GET_USER_BY_ID_PARAMS: Final[Dict[Endpoint, Any]] = {
 
 
 @router.get(
-    "/{username}",
+    "/username/{username}",
     response_model=_GET_USER_BY_ID_PARAMS[Endpoint.RESPONSE_MODEL],
     responses=_GET_USER_BY_ID_PARAMS[Endpoint.RESPONSES],
     description=_GET_USER_BY_ID_PARAMS[Endpoint.DESCRIPTION],
@@ -351,3 +351,28 @@ async def get_user_by_username(username: str, admin: bool = Depends(is_admin)):
         f"Success returning the serched user.",
     )
     return JSONResponse(status_code=status_code, content=jsonable_encoder(response))
+
+_GET_CURRENT_USER_PARAMS: Final[Dict[Endpoint, Any]] = {
+    Endpoint.RESPONSE_MODEL: List[UserPartialDetails | UserPartialDetailsAdmin],
+    Endpoint.RESPONSES: {
+        status.HTTP_401_UNAUTHORIZED: {
+            "model": HttpExceptionMessage,
+            "description": "Unauthorized", 
+        },
+        status.HTTP_500_INTERNAL_SERVER_ERROR: {
+            "model": HttpExceptionMessage,
+            "description": "An unknown error occured while retriving the user",
+        },
+    },
+    Endpoint.DESCRIPTION: "Get current user complete details.",
+}
+
+
+@router.get(
+    "/me",
+    response_model=_GET_CURRENT_USER_PARAMS[Endpoint.RESPONSE_MODEL],
+    responses=_GET_CURRENT_USER_PARAMS[Endpoint.RESPONSES],
+    description=_GET_CURRENT_USER_PARAMS[Endpoint.DESCRIPTION],
+)
+async def get_current_user(token: str = Depends(OAUTH2_SCHEME)):
+    raise HTTPException(status.HTTP_501_NOT_IMPLEMENTED)

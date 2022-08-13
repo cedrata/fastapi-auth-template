@@ -85,3 +85,10 @@ class UserPartialDetailsAdmin(BaseUser, BaseUserRoles):
 
     creation: datetime
     last_update: datetime
+
+
+class CurrentUserDetails(BaseUser, BaseUserRoles):
+    """Class for projection containing the current user complete details: email, username, roles, creation and update dates."""
+
+    creation: datetime
+    last_update: datetime
