@@ -19,7 +19,7 @@ from src.models.user import (
     UserRegistrationAdmin,
 )
 from src.routes.enums.commons import Endpoint
-from src.routes.validation import is_admin, require_admin
+from src.routes.validation import is_admin, is_authorized, require_admin
 from src.services.logger.interfaces.i_logger import ILogger
 
 # Router instantiation.
@@ -267,10 +267,16 @@ _GET_USERS_COUNT_PARAMS: Final[Dict[Endpoint, Any]] = {
     responses=_GET_USERS_COUNT_PARAMS[Endpoint.RESPONSES],
     description=_GET_USERS_COUNT_PARAMS[Endpoint.DESCRIPTION],
 )
-async def get_users_count(_: str = Depends(OAUTH2_SCHEME)):
+async def get_users_count(authorized: str = Depends(is_authorized)):
     logger = CONTAINER.get(ILogger)
     status_code: int
     response: int
+
+    if not authorized:
+        raise HTTPException(
+            status.HTTP_401_UNAUTHORIZED,
+            detail="The provided token may be expired or invalid.",
+        )
 
     logger.info(
         "routes",
@@ -352,12 +358,13 @@ async def get_user_by_username(username: str, admin: bool = Depends(is_admin)):
     )
     return JSONResponse(status_code=status_code, content=jsonable_encoder(response))
 
+
 _GET_CURRENT_USER_PARAMS: Final[Dict[Endpoint, Any]] = {
     Endpoint.RESPONSE_MODEL: List[UserPartialDetails | UserPartialDetailsAdmin],
     Endpoint.RESPONSES: {
         status.HTTP_401_UNAUTHORIZED: {
             "model": HttpExceptionMessage,
-            "description": "Unauthorized", 
+            "description": "Unauthorized",
         },
         status.HTTP_500_INTERNAL_SERVER_ERROR: {
             "model": HttpExceptionMessage,
@@ -374,5 +381,12 @@ _GET_CURRENT_USER_PARAMS: Final[Dict[Endpoint, Any]] = {
     responses=_GET_CURRENT_USER_PARAMS[Endpoint.RESPONSES],
     description=_GET_CURRENT_USER_PARAMS[Endpoint.DESCRIPTION],
 )
-async def get_current_user(token: str = Depends(OAUTH2_SCHEME)):
+async def get_current_user(authorized: str = Depends(is_authorized)):
+
+    if not authorized:
+        raise HTTPException(
+            status.HTTP_401_UNAUTHORIZED,
+            detail="The provided token may be expired or invalid.",
+        )
+
     raise HTTPException(status.HTTP_501_NOT_IMPLEMENTED)
