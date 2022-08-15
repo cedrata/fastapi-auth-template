@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Any, Dict, Final, List
+from typing import Any, Dict, Final, List, Tuple
 
 from beanie.odm.enums import SortDirection
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -7,7 +7,13 @@ from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from pymongo.errors import DuplicateKeyError
-from src.core.auth import OAUTH2_SCHEME, hash_password
+from src.core.auth import (
+    OAUTH2_SCHEME,
+    hash_password,
+    is_admin,
+    is_authorized,
+    require_admin,
+)
 from src.db.collections.user import User as UserCollection
 from src.helpers.container import CONTAINER
 from src.models.commons import BaseMessage, HttpExceptionMessage
@@ -19,7 +25,6 @@ from src.models.user import (
     UserRegistrationAdmin,
 )
 from src.routes.enums.commons import Endpoint
-from src.routes.validation import is_admin, is_authorized, require_admin
 from src.services.logger.interfaces.i_logger import ILogger
 
 # Router instantiation.
@@ -126,14 +131,20 @@ _REGISTER_ADMIN_POST_PARAMS: Final[Dict[Endpoint, Any]] = {
     dependencies=_REGISTER_ADMIN_POST_PARAMS[Endpoint.DEPENDENCIES],
 )
 async def register_admin(
-    user_registration: UserRegistrationAdmin, admin: str = Depends(is_admin)
+    user_registration: UserRegistrationAdmin,
+    is_admin_result: Tuple[bool, bool, dict] = Depends(is_admin),
 ):
     logger = CONTAINER.get(ILogger)
     status_code: int
     response: BaseModel
     now_date = datetime.utcnow()
 
-    if not admin:
+    # Check if user access token is valid.
+    if not is_admin_result[0]:
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED)
+
+    # Check if user has admin role.
+    if not is_admin_result[1]:
         raise HTTPException(status.HTTP_403_FORBIDDEN)
 
     # Document creation.
@@ -202,14 +213,21 @@ _GET_ALL_USERS_PARAMS: Final[Dict[Endpoint, Any]] = {
     description=_GET_ALL_USERS_PARAMS[Endpoint.DESCRIPTION],
 )
 async def get_all_users(
-    limit: int | None = None, skip: int | None = None, admin: bool = Depends(is_admin)
+    limit: int | None = None,
+    skip: int | None = None,
+    is_admin_result: Tuple[bool, bool, dict] = Depends(is_admin),
 ):
     logger = CONTAINER.get(ILogger)
     status_code: int
     response: BaseModel
     projection: BaseModel
 
-    if not admin:
+    # Check if user is authorized to access the endpoint.
+    if not is_admin_result[0]:
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED)
+
+    # Check if the user has admin role or not.
+    if not is_admin_result[1]:
         projection = UserPartialDetails
     else:
         projection = UserPartialDetailsAdmin
@@ -267,12 +285,15 @@ _GET_USERS_COUNT_PARAMS: Final[Dict[Endpoint, Any]] = {
     responses=_GET_USERS_COUNT_PARAMS[Endpoint.RESPONSES],
     description=_GET_USERS_COUNT_PARAMS[Endpoint.DESCRIPTION],
 )
-async def get_users_count(authorized: str = Depends(is_authorized)):
+async def get_users_count(
+    is_authorized_result: Tuple[bool, dict] = Depends(is_authorized)
+):
     logger = CONTAINER.get(ILogger)
     status_code: int
     response: int
 
-    if not authorized:
+    # Check if teh user is authorized or not.
+    if not is_authorized_result[0]:
         raise HTTPException(
             status.HTTP_401_UNAUTHORIZED,
             detail="The provided token may be expired or invalid.",
@@ -323,13 +344,20 @@ _GET_USER_BY_ID_PARAMS: Final[Dict[Endpoint, Any]] = {
     responses=_GET_USER_BY_ID_PARAMS[Endpoint.RESPONSES],
     description=_GET_USER_BY_ID_PARAMS[Endpoint.DESCRIPTION],
 )
-async def get_user_by_username(username: str, admin: bool = Depends(is_admin)):
+async def get_user_by_username(
+    username: str, is_admin_result: Tuple[bool, bool, dict] = Depends(is_admin)
+):
     logger = CONTAINER.get(ILogger)
     status_code: int
     response: BaseModel
     projection: BaseModel
 
-    if not admin:
+    # Check if user access token was valid and user authorized.
+    if not is_admin_result[0]:
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED)
+
+    # Check if user has admin role or not.
+    if not is_admin_result[1]:
         projection = UserPartialDetails
     else:
         projection = UserPartialDetailsAdmin
@@ -381,12 +409,20 @@ _GET_CURRENT_USER_PARAMS: Final[Dict[Endpoint, Any]] = {
     responses=_GET_CURRENT_USER_PARAMS[Endpoint.RESPONSES],
     description=_GET_CURRENT_USER_PARAMS[Endpoint.DESCRIPTION],
 )
-async def get_current_user(authorized: str = Depends(is_authorized)):
+async def get_current_user(
+    is_authorized_result: Tuple[bool, dict] = Depends(is_authorized),
+    token: str = Depends(OAUTH2_SCHEME),
+):
 
-    if not authorized:
+    # Check if the user is authorized or not.
+    if not is_authorized_result[0]:
         raise HTTPException(
             status.HTTP_401_UNAUTHORIZED,
             detail="The provided token may be expired or invalid.",
         )
+
+    # Decoded token is in is_authorized_result[1]
+
+    response = UserCollection.find_one()
 
     raise HTTPException(status.HTTP_501_NOT_IMPLEMENTED)

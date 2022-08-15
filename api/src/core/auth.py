@@ -2,8 +2,9 @@ import sys
 from datetime import datetime, timedelta
 from os import environ
 from os.path import join
-from typing import Any, Dict, Final, List
+from typing import Any, Dict, Final, List, Tuple
 
+from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import jwt
 from jose.exceptions import ExpiredSignatureError, JWTError
@@ -87,7 +88,7 @@ def decode_token(encoded_token: str) -> dict:
     Args:
         encoded_token (str): token to decode.
 
-    Raises:
+
         DecodeTokenError: if anything goes an HTTPException is returned.
 
     Returns:
@@ -172,3 +173,69 @@ def has_roles(user_roles: List[Role], required_roles: List[Role]) -> bool:
         bool: True if at least one of the user roles is contained in the required roles.
     """
     return bool(set(user_roles) & set(required_roles))
+
+
+def is_authorized(token: str = Depends(OAUTH2_SCHEME)) -> Tuple[bool, dict]:
+    """This function will check if an user is authorized or not.
+
+    Args:
+        token (str, optional): Token read from the header. Defaults to Depends(OAUTH2_SCHEME).
+
+    Raises:
+        HTTPException: When the token is invalid an exception is thrown.
+
+    Returns:
+        bool: True if the user is authenticated (has a valid accesss token), False otherwise.
+        dict: Dictionary contining the decoded token if is authorized, otherwise empty dictionary.
+    """
+    # logger = CONTAINER.get(ILogger)
+    decoded_token: dict = {}
+    try:
+        decoded_token = decode_token(token)
+    except DecodeTokenError as e:
+        # logger.warning("routes", e.loggable)
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, detail=e.msg)
+    return (valid_access_token(decoded_token), decoded_token)
+
+
+def is_admin(token: str = Depends(OAUTH2_SCHEME)) -> Tuple[bool, bool, dict]:
+    """This function will check if an user is authorized and has admin role.
+
+    Args:
+        token (str, optional): Token read from the header. Defaults to Depends(OAUTH2_SCHEME).
+
+    Raises:
+        HTTPException: When the token is invalid or missing an exception is thrown.
+
+    Returns:
+        bool: True if the user is authenticated (has a valid accesss token), False otherwise.
+        bool: True if the user is admin (valid token), False otherwise.
+        dict: Dictionary contining the decoded token if is authorized, otherwise empty dictionary.
+    """
+    authorized, decoded_token = is_authorized(token)
+
+    if not authorized:
+        return authorized, False, {}
+
+    if not has_roles(decoded_token["roles"], [Role.ADMIN]):
+        return authorized, False, decoded_token
+
+    return authorized, True, decoded_token
+
+
+def require_admin(token: str = Depends(OAUTH2_SCHEME)) -> None:
+    """This function will chck if an user is admin or not, if not raise an HTTPException.
+
+    Args:
+        token (str, optional): Token read from the header. Defaults to Depends(OAUTH2_SCHEME).
+
+    Raises:
+        HTTPException: Missing authorization or forbidden acces (not admin).
+    """
+    authorized, admin, _ = is_admin(token)
+
+    if not authorized:
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED)
+
+    if not admin:
+        raise HTTPException(status.HTTP_403_FORBIDDEN)
