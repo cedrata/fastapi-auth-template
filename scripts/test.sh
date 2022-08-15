@@ -10,4 +10,41 @@
 # May not work for other distros.
 ################################################################################
 
-pip install -e ..
+
+################################################################################
+# Echo text colors.
+DEFAULT_COLOUR='\033[33;0m'
+RED='\033[33;31m'
+GREEN='\033[33;32m'
+ORANGE='\033[33;33m'
+
+################################################################################
+# Reading input arguments.
+# Making sure the number read arguments is correct.
+if [ "$#" -lt 1 ]; then
+    echo -e "${ORANGE}Usage: test.sh <module-directory-absolute-path>"
+    echo "Interrupting."
+    exit -1
+fi
+
+# Making sure the arguments are absolute paths.
+if [ ! "$1" = /* ]; then
+    echo -e "${RED}The module-directory path must be absolute."
+    echo "Interrupting."
+    exit -1
+elif [ ! -d "$1" ]; then
+    echo -e "${RED}The module-directory path does not exists."
+    echo "Interrupting."
+    exit -1
+fi
+
+################################################################################
+# Variables initiaization.
+
+# if the validation is passed initialize all the variables.
+MODULE_DIR=$1
+
+
+################################################################################
+# Executing the command.
+pip install -e $MODULE_DIR
