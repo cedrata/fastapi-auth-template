@@ -8,17 +8,11 @@ from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from pymongo.errors import DuplicateKeyError
-from src.core.auth import (
-    hash_password,
-    is_admin,
-    is_authorized,
-    require_admin,
-)
+from src.core.auth import hash_password, is_admin, is_authorized, require_admin
 from src.db.collections.user import User as UserCollection
 from src.helpers.container import CONTAINER
 from src.models.commons import BaseMessage, HttpExceptionMessage
 from src.models.user import (
-    BaseUserRoles,
     CurrentUserDetails,
     Role,
     UpdateUserDetails,
@@ -86,10 +80,7 @@ async def register(user_registration: UserRegistration):
     except Exception as e:
         logger.error("routes", str(e))
         msg = f"An unknown exception occured, maybe bad db connection"
-        raise HTTPException(
-            status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=msg
-        )
+        raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
 
     response = BaseMessage(message="OK")
     status_code = status.HTTP_201_CREATED
@@ -176,10 +167,7 @@ async def register_admin(
     except Exception as e:
         logger.error("routes", str(e))
         msg = f"An unknown exception occured, maybe bad db connection"
-        raise HTTPException(
-            status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=msg
-        )
+        raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
 
     response = BaseMessage(message="OK")
     status_code = status.HTTP_201_CREATED
@@ -506,14 +494,12 @@ async def put_user_by_username(
     except Exception as e:
         logger.error("routes", str(e))
         msg = f"An unknown exception occured, maybe bad db connection"
-        raise HTTPException(
-            status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=msg
-        )
+        raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
 
     logger.info("routes", f"Succesful update for {username} to {updated_user.json()}")
 
     return JSONResponse(status.HTTP_200_OK)
+
 
 _DELETE_USER_BY_USERNAME_PARAMS: Final[Dict[Endpoint, Any]] = {
     Endpoint.RESPONSE_MODEL: int,
@@ -541,6 +527,7 @@ _DELETE_USER_BY_USERNAME_PARAMS: Final[Dict[Endpoint, Any]] = {
     },
     Endpoint.DESCRIPTION: "Update user given the username in path and user with updated fields in body.",
 }
+
 
 @router.delete(
     "/username/{username}",
@@ -572,19 +559,21 @@ async def put_user_by_username(
 
     # If the user to delete is admin and the last one return 406.
     if Role.ADMIN in to_delete.roles:
-        admin_count = await UserCollection.find_many(All(UserCollection.roles, [Role.ADMIN.value])).count()
+        admin_count = await UserCollection.find_many(
+            All(UserCollection.roles, [Role.ADMIN.value])
+        ).count()
         if admin_count == 1:
-            raise HTTPException(status.HTTP_406_NOT_ACCEPTABLE, detail="Trying to delete the last admin user, impossible.")
+            raise HTTPException(
+                status.HTTP_406_NOT_ACCEPTABLE,
+                detail="Trying to delete the last admin user, impossible.",
+            )
 
     try:
         await to_delete.delete()
     except Exception as e:
         logger.error("routes", str(e))
         msg = f"An unknown exception occured, maybe bad db connection"
-        raise HTTPException(
-            status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=msg
-        )
+        raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, detail=msg)
 
     logger.info("routes", f"Succesful deletion for {username}")
 

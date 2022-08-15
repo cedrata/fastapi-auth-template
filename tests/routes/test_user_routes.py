@@ -13,11 +13,11 @@ from src.models.user import (
 )
 from tests import (
     BASE_URL,
+    IS_TYPED,
     admin_login,
     build_db_client,
     fastapi_app,
     user_login,
-    IS_TYPED,
 )
 
 
