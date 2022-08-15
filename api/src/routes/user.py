@@ -422,5 +422,9 @@ async def get_current_user(
         )
 
     # Decoded token is in is_authorized_result[1]
-    return await UserCollection.find_one(UserCollection.username == is_authorized_result[1]["username"]).project(CurrentUserDetails)
+    status_code = status.HTTP_200_OK
+    response = await UserCollection.find_one(
+        UserCollection.username == is_authorized_result[1]["username"]
+    ).project(CurrentUserDetails)
 
+    return JSONResponse(status_code=status_code, content=jsonable_encoder(response))
