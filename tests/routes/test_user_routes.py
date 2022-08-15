@@ -610,7 +610,7 @@ async def test_delete_user():
 
     # Endpoint test.
     async with AsyncClient(app=fastapi_app, base_url=BASE_URL) as ac:
-        response = await ac.put(
+        response = await ac.delete(
             f"/user/username/user",
             headers={
                 "Authorization": f"{login_response.token_type} {login_response.access_token}"
@@ -620,7 +620,7 @@ async def test_delete_user():
     assert response.status_code == 200
 
     # Check and reset DB content to original state.
-    temp_user.save()
+    await temp_user.create()
 
 
 @pytest.mark.asyncio
@@ -634,7 +634,7 @@ async def test_delte_user_bad_user():
 
     # Endpoint test.
     async with AsyncClient(app=fastapi_app, base_url=BASE_URL) as ac:
-        response = await ac.put(
+        response = await ac.delete(
             f"/user/username/admin",
             headers={
                 "Authorization": f"{login_response.token_type} {login_response.access_token}"
@@ -658,7 +658,7 @@ async def test_delete_user_admin():
 
     # Endpoint test.
     async with AsyncClient(app=fastapi_app, base_url=BASE_URL) as ac:
-        response = await ac.put(
+        response = await ac.delete(
             f"/user/username/user",
             headers={
                 "Authorization": f"{login_response.token_type} {login_response.access_token}"
@@ -668,7 +668,7 @@ async def test_delete_user_admin():
     assert response.status_code == 200
 
     # Check and reset DB content to original state.
-    temp_user.save()
+    await temp_user.save()
 
 
 @pytest.mark.asyncio
@@ -683,7 +683,7 @@ async def test_delete_user_admin_missing():
 
     # Endpoint test.
     async with AsyncClient(app=fastapi_app, base_url=BASE_URL) as ac:
-        response = await ac.put(
+        response = await ac.delete(
             f"/user/username/missing",
             headers={
                 "Authorization": f"{login_response.token_type} {login_response.access_token}"
@@ -700,12 +700,12 @@ async def test_delete_last_admin():
     await build_db_client()
 
     # Execute login.
-    login_response = await user_login()
+    login_response = await admin_login()
 
     # Endpoint test.
     async with AsyncClient(app=fastapi_app, base_url=BASE_URL) as ac:
-        response = await ac.put(
-            f"/user/username/missing",
+        response = await ac.delete(
+            f"/user/username/admin",
             headers={
                 "Authorization": f"{login_response.token_type} {login_response.access_token}"
             },
