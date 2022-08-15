@@ -2,13 +2,13 @@ from datetime import datetime
 from typing import Any, Dict, Final, List, Tuple
 
 from beanie.odm.enums import SortDirection
+from beanie.operators import All
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from pymongo.errors import DuplicateKeyError
 from src.core.auth import (
-    OAUTH2_SCHEME,
     hash_password,
     is_admin,
     is_authorized,
@@ -18,6 +18,7 @@ from src.db.collections.user import User as UserCollection
 from src.helpers.container import CONTAINER
 from src.models.commons import BaseMessage, HttpExceptionMessage
 from src.models.user import (
+    BaseUserRoles,
     CurrentUserDetails,
     Role,
     UpdateUserDetails,
@@ -87,6 +88,7 @@ async def register(user_registration: UserRegistration):
         msg = f"An unknown exception occured, maybe bad db connection"
         raise HTTPException(
             status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=msg
         )
 
     response = BaseMessage(message="OK")
@@ -176,6 +178,7 @@ async def register_admin(
         msg = f"An unknown exception occured, maybe bad db connection"
         raise HTTPException(
             status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=msg
         )
 
     response = BaseMessage(message="OK")
@@ -504,8 +507,84 @@ async def put_user_by_username(
         msg = f"An unknown exception occured, maybe bad db connection"
         raise HTTPException(
             status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=msg
         )
 
     logger.info("routes", f"Succesful update for {username} to {updated_user.json()}")
+
+    return JSONResponse(status.HTTP_200_OK)
+
+_DELETE_USER_BY_USERNAME_PARAMS: Final[Dict[Endpoint, Any]] = {
+    Endpoint.RESPONSE_MODEL: int,
+    Endpoint.RESPONSES: {
+        status.HTTP_401_UNAUTHORIZED: {
+            "model": HttpExceptionMessage,
+            "description": "Unauthorized",
+        },
+        status.HTTP_403_FORBIDDEN: {
+            "model": HttpExceptionMessage,
+            "description": "Only users with admin role can update other users.",
+        },
+        status.HTTP_404_NOT_FOUND: {
+            "model": HttpExceptionMessage,
+            "description": "The user to update was not found",
+        },
+        status.HTTP_406_NOT_ACCEPTABLE: {
+            "model": HttpExceptionMessage,
+            "description": "You are trying to delete the last admin, not acceptable.",
+        },
+        status.HTTP_500_INTERNAL_SERVER_ERROR: {
+            "model": HttpExceptionMessage,
+            "description": "An unknown error occured while retriving the user",
+        },
+    },
+    Endpoint.DESCRIPTION: "Update user given the username in path and user with updated fields in body.",
+}
+
+@router.delete(
+    "/username/{username}",
+    response_model=_DELETE_USER_BY_USERNAME_PARAMS[Endpoint.RESPONSE_MODEL],
+    responses=_DELETE_USER_BY_USERNAME_PARAMS[Endpoint.RESPONSES],
+    description=_DELETE_USER_BY_USERNAME_PARAMS[Endpoint.DESCRIPTION],
+)
+async def put_user_by_username(
+    username: str,
+    is_admin_result: Tuple[bool, bool, dict] = Depends(is_admin),
+):
+
+    logger = CONTAINER.get(ILogger)
+
+    # Check if user is authorized.
+    if not is_admin_result[0]:
+        logger.info("routes", "The user is not authenticated.")
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED)
+
+    # Check if user is not admin that the user in the decoded token is equal to the given one in the endpoint path.
+    if not is_admin_result[1] and username != is_admin_result[2]["username"]:
+        logger.info("routes", "The user has not right to update a different user.")
+        raise HTTPException(status.HTTP_403_FORBIDDEN)
+
+    to_delete = await UserCollection.find_one(UserCollection.username == username)
+
+    if to_delete is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND)
+
+    # If the user to delete is admin and the last one return 406.
+    if Role.ADMIN in to_delete.roles:
+        admin_count = await UserCollection.find_many(All(UserCollection.roles, [Role.ADMIN.value])).count()
+        if admin_count == 1:
+            raise HTTPException(status.HTTP_406_NOT_ACCEPTABLE, detail="Trying to delete the last admin user, impossible.")
+
+    try:
+        await to_delete.delete()
+    except Exception as e:
+        logger.error("routes", str(e))
+        msg = f"An unknown exception occured, maybe bad db connection"
+        raise HTTPException(
+            status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=msg
+        )
+
+    logger.info("routes", f"Succesful deletion for {username}")
 
     return JSONResponse(status.HTTP_200_OK)
