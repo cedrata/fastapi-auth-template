@@ -462,8 +462,12 @@ _PUT_USER_BY_USERNAME_PARAMS: Final[Dict[Endpoint, Any]] = {
 @router.put(
     "/username/{username}",
     response_model=_PUT_USER_BY_USERNAME_PARAMS[Endpoint.RESPONSE_MODEL],
-    responses=_PUT_USER_BY_USERNAME_PARAMS[Endpoint.RESPONSE_MODEL],
-    description=_PUT_USER_BY_USERNAME_PARAMS[Endpoint.RESPONSES],
+    responses=_PUT_USER_BY_USERNAME_PARAMS[Endpoint.RESPONSES],
+    description=_PUT_USER_BY_USERNAME_PARAMS[Endpoint.DESCRIPTION],
 )
-async def put_user_by_username(updated_user: UpdateUserDetails, is_admin_result: Tuple[bool, bool, dict] = Depends(is_admin)):
+async def put_user_by_username(
+    username: str,
+    updated_user: UpdateUserDetails,
+    is_admin_result: Tuple[bool, bool, dict] = Depends(is_admin),
+):
     raise HTTPException(status.HTTP_501_NOT_IMPLEMENTED)
