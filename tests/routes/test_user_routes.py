@@ -11,7 +11,14 @@ from src.models.user import (
     UserPartialDetails,
     UserPartialDetailsAdmin,
 )
-from tests import BASE_URL, admin_login, build_db_client, fastapi_app, user_login, IS_TYPED
+from tests import (
+    BASE_URL,
+    admin_login,
+    build_db_client,
+    fastapi_app,
+    user_login,
+    IS_TYPED,
+)
 
 
 @pytest.mark.asyncio
