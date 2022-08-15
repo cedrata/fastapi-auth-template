@@ -408,6 +408,7 @@ async def test_get_current_user():
     # Execute login.
     login_response = await user_login()
 
+    # Endpoint test.
     async with AsyncClient(app=fastapi_app, base_url=BASE_URL) as ac:
         response = await ac.get(
             f"/user/me",
@@ -425,3 +426,84 @@ async def test_get_current_user():
         raise AssertionError(
             f"Impossible to parse to {CurrentUserDetails.__name__} json: {response.text}."
         )
+
+@pytest.mark.asyncio
+async def update_user():
+
+    # DB connection.
+    await build_db_client()
+
+    # Execute login.
+    login_response = await user_login()
+
+    async with AsyncClient(app=fastapi_app, base_url=BASE_URL) as ac:
+        response = ac.put(
+            f"/user/username/user",
+            headers={
+                "Authorization": f"{login_response.token_type} {login_response.access_token}"
+            },
+        )
+
+    assert response.status_code == 200
+
+@pytest.mark.asyncio
+async def update_user_bad():
+
+    # DB connection.
+    await build_db_client()
+
+    # Execute login.
+    login_response = await user_login()
+
+    # Endpoint test.
+    async with AsyncClient(app=fastapi_app, base_url=BASE_URL) as ac:
+        response = ac.put(
+            f"/user/username/admin",
+            headers={
+                "Authorization": f"{login_response.token_type} {login_response.access_token}"
+            },
+        )
+
+    assert response.status_code == 403
+
+
+@pytest.mark.asyncio
+async def update_user_admin():
+
+    # DB connection.
+    await build_db_client()
+
+    # Execute login.
+    login_response = await admin_login()
+
+    # Endpoint test.
+    async with AsyncClient(app=fastapi_app, base_url=BASE_URL) as ac:
+        response = ac.put(
+            f"/user/username/user",
+            headers={
+                "Authorization": f"{login_response.token_type} {login_response.access_token}"
+            },
+        )
+
+    assert response.status_code == 200
+
+@pytest.mark.asyncio
+async def update_user_admin_missing():
+    # Try to update an user that does not exists.
+
+    # DB connection.
+    await build_db_client()
+
+    # Execute login.
+    login_response = await admin_login()
+
+    # Endpoint test.
+    async with AsyncClient(app=fastapi_app, base_url=BASE_URL) as ac:
+        response = ac.put(
+            f"/user/username/missing",
+            headers={
+                "Authorization": f"{login_response.token_type} {login_response.access_token}"
+            },
+        )
+
+    assert response.status_code == 404
