@@ -7,6 +7,7 @@ from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from jose.exceptions import JWTError
+from pydantic import BaseModel
 from src.core import auth
 from src.core.exceptions import DecodeTokenError, ValidateTokenError
 from src.db.collections import user as db_user
@@ -47,7 +48,7 @@ async def login(
     request_form: OAuth2PasswordRequestForm = Depends(),
 ):
     logger = CONTAINER.get(ILogger)
-    response: Any
+    response: BaseModel
     status_code: int
 
     # Query to get the requested user.
@@ -55,16 +56,18 @@ async def login(
         db_user.User.username == request_form.username
     )
 
-    error_message = "Invalid username or password"
+    msg = "Invalid username or password"
     # Search if user exists in DB.
     # The user does not exists.
 
     if user_res is None:
         logger.warning("routes", f"{request_form.username} user not found in database.")
-        raise HTTPException(status.HTTP_401_UNAUTHORIZED, detail=error_message)
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, detail=msg)
 
     # A projecton is not made because the password is required to check if the user has th
-    user_projection = UserLogin(username=user_res.username, roles=user_res.roles)
+    user_projection = UserLogin(
+        email=user_res.email, username=user_res.username, roles=user_res.roles
+    )
 
     # Check if the input password match the stored one,
     # but before doing so the password to check must be hashed, and then compared.
@@ -74,7 +77,7 @@ async def login(
         user_res.password,
     ):
         logger.warning("routes", f"Wrong password for {request_form.username}.")
-        raise HTTPException(status.HTTP_401_UNAUTHORIZED, detail=error_message)
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, detail=msg)
 
     # The user exists.
     # Converting expriation times to timedelta.
@@ -152,7 +155,7 @@ async def refresh(
     refresh_token: str | None = Header(default=None),
 ):
     logger = CONTAINER.get(ILogger)
-    response: Any
+    response: BaseModel
     status_code: int
     decoded_token: dict
     msg: str
@@ -167,7 +170,7 @@ async def refresh(
 
     # Validate the token.
     try:
-        _ = auth.validate_refresh_token(decoded_token)
+        _ = auth.valid_refresh_token(decoded_token)
     except ValidateTokenError as e:
         logger.warning("routes", e.loggable)
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=e.msg)
@@ -187,7 +190,9 @@ async def refresh(
     # The token is valid and is about an existing user, generate a new token pair.
 
     # A projecton is not made because the password is required to check if the user has th
-    user_projection = UserLogin(username=user_res.username, roles=user_res.roles)
+    user_projection = UserLogin(
+        email=user_res.email, username=user_res.username, roles=user_res.roles
+    )
 
     # Converting expriation times to timedelta.
     try:

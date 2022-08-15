@@ -2,14 +2,16 @@ import sys
 from datetime import datetime, timedelta
 from os import environ
 from os.path import join
-from typing import Any, Dict, Final
+from typing import Any, Dict, Final, List, Tuple
 
+from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import jwt
 from jose.exceptions import ExpiredSignatureError, JWTError
 from passlib.context import CryptContext
-from src.core.exceptions import DecodeTokenError, ValidateTokenError
+from src.core.exceptions import DecodeTokenError
 from src.helpers.container import CONTAINER
+from src.models.user import Role
 from src.services.logger.interfaces.i_logger import ILogger
 from yaml import safe_load
 
@@ -39,7 +41,7 @@ except Exception as e:
     )
     sys.exit()
 
-TOKEN_FIELDS: Final[set] = {"username", "roles", "exp", "is_refresh"}
+TOKEN_FIELDS: Final[set] = {"email", "username", "roles", "exp", "is_refresh"}
 
 
 def hash_password(password: str) -> str:
@@ -61,6 +63,7 @@ def create_token(
     """Return a token for the given data, this function can be used to return both access and refresh tokens.
     !!!IMPORTANT!!!
     If "data" argument contains a password make sure it is hashed and not plain!!!
+    The password should not be contained in the token anyway.
 
     Args:
         data (dict): data to encode in jwt.
@@ -85,7 +88,7 @@ def decode_token(encoded_token: str) -> dict:
     Args:
         encoded_token (str): token to decode.
 
-    Raises:
+
         DecodeTokenError: if anything goes an HTTPException is returned.
 
     Returns:
@@ -113,43 +116,126 @@ def decode_token(encoded_token: str) -> dict:
     return decoded_token
 
 
-def validate_token_base(decoded_token: dict) -> bool:
+def valid_token(decoded_token: dict) -> bool:
     """This function will say if the keys present inside the decoded_token are the same that is expected to have a valid token.
 
     Args:
         decoded_token (dict): decoded token in form of dictionary.
 
-    Raises:
-        ValidateTokenError: if the token does not respect the current token structure.
-
     Returns:
         bool: True if the decoded token structure is valid.
     """
     if TOKEN_FIELDS != set(decoded_token):
-        raise ValidateTokenError(
-            loggable="The given token keys does not match the keys in src.core.auth.TOKEN_FIELDS.",
-            msg="The given token has an invalid structure.",
-        )
+        return False
     return True
 
 
-def validate_refresh_token(decoded_token: dict) -> bool:
+def valid_refresh_token(decoded_token: dict) -> bool:
+    """This function will see if the token structure (present keys) are valid to then check if the "is_refresh" key is set to true.
+
+    Args:
+        decoded_token (dict): decoded token in form of dictionary.
+
+    Returns:
+        bool: True if "is_refresh" is True, False otherwise.
+    """
+    if not valid_token(decoded_token):
+        return False
+    if decoded_token["is_refresh"] is False:
+        return False
+    return True
+
+
+def valid_access_token(decoded_token: dict) -> bool:
     """This function will see if the token structure (present keys) are valid to then check if the "is_refresh" key is set to false.
 
     Args:
         decoded_token (dict): decoded token in form of dictionary.
 
-    Raises:
-        ValidateTokenError: if the provided token is not a refresh token.
+    Returns:
+        bool: True if "is_refresh" is False, False otherwise.
+    """
+    if not valid_token(decoded_token):
+        return False
+    if decoded_token["is_refresh"] is True:
+        return False
+    return True
+
+
+def has_roles(user_roles: List[Role], required_roles: List[Role]) -> bool:
+    """This function will check efficiently if the user roles have at least one of the required roles.
+
+    Args:
+        user_roles (List[Role]): user roles.
+        required_roles (List[Role]): required roles.
 
     Returns:
-        bool: True if "is_refresh" is True, False otherwise.
+        bool: True if at least one of the user roles is contained in the required roles.
     """
-    _ = validate_token_base(decoded_token)
+    return bool(set(user_roles) & set(required_roles))
 
-    if decoded_token["is_refresh"] is False:
-        raise ValidateTokenError(
-            loggable="The current token has the 'is_refresh' field set to false.",
-            msg="The given token is not a refresh token.",
-        )
-    return True
+
+def is_authorized(token: str = Depends(OAUTH2_SCHEME)) -> Tuple[bool, dict]:
+    """This function will check if an user is authorized or not.
+
+    Args:
+        token (str, optional): Token read from the header. Defaults to Depends(OAUTH2_SCHEME).
+
+    Raises:
+        HTTPException: When the token is invalid an exception is thrown.
+
+    Returns:
+        bool: True if the user is authenticated (has a valid accesss token), False otherwise.
+        dict: Dictionary contining the decoded token if is authorized, otherwise empty dictionary.
+    """
+    # logger = CONTAINER.get(ILogger)
+    decoded_token: dict = {}
+    try:
+        decoded_token = decode_token(token)
+    except DecodeTokenError as e:
+        # logger.warning("routes", e.loggable)
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, detail=e.msg)
+    return (valid_access_token(decoded_token), decoded_token)
+
+
+def is_admin(token: str = Depends(OAUTH2_SCHEME)) -> Tuple[bool, bool, dict]:
+    """This function will check if an user is authorized and has admin role.
+
+    Args:
+        token (str, optional): Token read from the header. Defaults to Depends(OAUTH2_SCHEME).
+
+    Raises:
+        HTTPException: When the token is invalid or missing an exception is thrown.
+
+    Returns:
+        bool: True if the user is authenticated (has a valid accesss token), False otherwise.
+        bool: True if the user is admin (valid token), False otherwise.
+        dict: Dictionary contining the decoded token if is authorized, otherwise empty dictionary.
+    """
+    authorized, decoded_token = is_authorized(token)
+
+    if not authorized:
+        return authorized, False, {}
+
+    if not has_roles(decoded_token["roles"], [Role.ADMIN]):
+        return authorized, False, decoded_token
+
+    return authorized, True, decoded_token
+
+
+def require_admin(token: str = Depends(OAUTH2_SCHEME)) -> None:
+    """This function will chck if an user is admin or not, if not raise an HTTPException.
+
+    Args:
+        token (str, optional): Token read from the header. Defaults to Depends(OAUTH2_SCHEME).
+
+    Raises:
+        HTTPException: Missing authorization or forbidden acces (not admin).
+    """
+    authorized, admin, _ = is_admin(token)
+
+    if not authorized:
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED)
+
+    if not admin:
+        raise HTTPException(status.HTTP_403_FORBIDDEN)
