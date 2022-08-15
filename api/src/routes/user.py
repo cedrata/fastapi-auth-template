@@ -428,3 +428,37 @@ async def get_current_user(
     ).project(CurrentUserDetails)
 
     return JSONResponse(status_code=status_code, content=jsonable_encoder(response))
+
+
+_PUT_USER_BY_USERNAME_PARAMS: Final[Dict[Endpoint, Any]] = {
+    Endpoint.RESPONSE_MODEL: int,
+    Endpoint.RESPONSES: {
+        status.HTTP_401_UNAUTHORIZED: {
+            "model": HttpExceptionMessage,
+            "description": "Unauthorized",
+        },
+        status.HTTP_403_FORBIDDEN: {
+            "model": HttpExceptionMessage,
+            "description": "Only users with admin role can update other users.",
+        },
+        status.HTTP_404_NOT_FOUND: {
+            "model": HttpExceptionMessage,
+            "description": "The user to update was not found",
+        },
+        status.HTTP_500_INTERNAL_SERVER_ERROR: {
+            "model": HttpExceptionMessage,
+            "description": "An unknown error occured while retriving the user",
+        },
+    },
+    Endpoint.DESCRIPTION: "Update user given the username in path and user with updated fields in body.",
+}
+
+
+@router.put(
+    "/username/{username}",
+    response_model=_PUT_USER_BY_USERNAME_PARAMS[Endpoint.RESPONSE_MODEL],
+    responses=_PUT_USER_BY_USERNAME_PARAMS[Endpoint.RESPONSE_MODEL],
+    description=_PUT_USER_BY_USERNAME_PARAMS[Endpoint.RESPONSES],
+)
+async def put_user_by_username():
+    raise HTTPException(status.HTTP_501_NOT_IMPLEMENTED)
