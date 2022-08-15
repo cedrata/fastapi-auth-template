@@ -11,8 +11,7 @@ from src.models.user import (
     UserPartialDetails,
     UserPartialDetailsAdmin,
 )
-from src.routes.validation import IS_TYPED
-from tests import BASE_URL, admin_login, build_db_client, fastapi_app, user_login
+from tests import BASE_URL, admin_login, build_db_client, fastapi_app, user_login, IS_TYPED
 
 
 @pytest.mark.asyncio
