@@ -427,6 +427,7 @@ async def test_get_current_user():
             f"Impossible to parse to {CurrentUserDetails.__name__} json: {response.text}."
         )
 
+
 @pytest.mark.asyncio
 async def update_user():
 
@@ -442,12 +443,24 @@ async def update_user():
             headers={
                 "Authorization": f"{login_response.token_type} {login_response.access_token}"
             },
+            json={
+                "username": "user1",
+                "email": "user@email.com",
+                "roles": ["user"],
+            },
         )
 
     assert response.status_code == 200
 
+    # Check and reset DB content to original state.
+    user_check = await User.find_one(User.username == "user1")
+    assert user_check.username == "user1"
+    user_check.username = "user"
+    await user_check.save()
+
+
 @pytest.mark.asyncio
-async def update_user_bad():
+async def update_user_bad_user():
 
     # DB connection.
     await build_db_client()
@@ -461,6 +474,37 @@ async def update_user_bad():
             f"/user/username/admin",
             headers={
                 "Authorization": f"{login_response.token_type} {login_response.access_token}"
+            },
+            json={
+                "username": "admin1",
+                "email": "admin@email.com",
+                "roles": ["admin", "user"],
+            },
+        )
+
+    assert response.status_code == 403
+
+
+@pytest.mark.asyncio
+async def update_user_bad_roles():
+
+    # DB connection.
+    await build_db_client()
+
+    # Execute login.
+    login_response = await user_login()
+
+    # Endpoint test.
+    async with AsyncClient(app=fastapi_app, base_url=BASE_URL) as ac:
+        response = ac.put(
+            f"/user/username/admin",
+            headers={
+                "Authorization": f"{login_response.token_type} {login_response.access_token}"
+            },
+            json={
+                "username": "user",
+                "email": "user@email.com",
+                "roles": ["admin", "user"],
             },
         )
 
@@ -483,9 +527,21 @@ async def update_user_admin():
             headers={
                 "Authorization": f"{login_response.token_type} {login_response.access_token}"
             },
+            json={
+                "username": "user1",
+                "email": "user@email.com",
+                "roles": ["user"],
+            },
         )
 
     assert response.status_code == 200
+
+    # Check and reset DB content to original state.
+    user_check = await User.find_one(User.username == "user1")
+    assert user_check.username == "user1"
+    user_check.username = "user"
+    await user_check.save()
+
 
 @pytest.mark.asyncio
 async def update_user_admin_missing():
@@ -504,6 +560,37 @@ async def update_user_admin_missing():
             headers={
                 "Authorization": f"{login_response.token_type} {login_response.access_token}"
             },
+            json={
+                "username": "user1",
+                "email": "user@email.com",
+                "roles": ["user"],
+            },
         )
 
     assert response.status_code == 404
+
+
+@pytest.mark.asyncio
+async def update_user_duplicate_uername_or_email():
+
+    # DB connection.
+    await build_db_client()
+
+    # Execute login.
+    login_response = await user_login()
+
+    # Endpoint test.
+    async with AsyncClient(app=fastapi_app, base_url=BASE_URL) as ac:
+        response = ac.put(
+            f"/user/username/missing",
+            headers={
+                "Authorization": f"{login_response.token_type} {login_response.access_token}"
+            },
+            json={
+                "username": "admin",
+                "email": "user@email.com",
+                "roles": ["user"],
+            },
+        )
+
+    assert response.status_code == 403
