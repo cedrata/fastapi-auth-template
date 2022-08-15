@@ -594,3 +594,121 @@ async def test_update_user_duplicate_uername_or_email():
         )
 
     assert response.status_code == 403
+
+
+@pytest.mark.asyncio
+async def test_delete_user():
+
+    # DB connection.
+    await build_db_client()
+
+    # Execute login.
+    login_response = await user_login()
+
+    # Store user to delete to then add it later after test completion.
+    temp_user = await User.find_one(User.username == "user")
+
+    # Endpoint test.
+    async with AsyncClient(app=fastapi_app, base_url=BASE_URL) as ac:
+        response = await ac.put(
+            f"/user/username/user",
+            headers={
+                "Authorization": f"{login_response.token_type} {login_response.access_token}"
+            },
+        )
+
+    assert response.status_code == 200
+
+    # Check and reset DB content to original state.
+    temp_user.save()
+
+
+@pytest.mark.asyncio
+async def test_delte_user_bad_user():
+
+    # DB connection.
+    await build_db_client()
+
+    # Execute login.
+    login_response = await user_login()
+
+    # Endpoint test.
+    async with AsyncClient(app=fastapi_app, base_url=BASE_URL) as ac:
+        response = await ac.put(
+            f"/user/username/admin",
+            headers={
+                "Authorization": f"{login_response.token_type} {login_response.access_token}"
+            },
+        )
+
+    assert response.status_code == 403
+
+
+@pytest.mark.asyncio
+async def test_delete_user_admin():
+
+    # DB connection.
+    await build_db_client()
+
+    # Execute login.
+    login_response = await admin_login()
+
+    # Store user to delete to then add it later after test completion.
+    temp_user = await User.find_one(User.username == "user")
+
+    # Endpoint test.
+    async with AsyncClient(app=fastapi_app, base_url=BASE_URL) as ac:
+        response = await ac.put(
+            f"/user/username/user",
+            headers={
+                "Authorization": f"{login_response.token_type} {login_response.access_token}"
+            },
+        )
+
+    assert response.status_code == 200
+
+    # Check and reset DB content to original state.
+    temp_user.save()
+
+
+@pytest.mark.asyncio
+async def test_delete_user_admin_missing():
+    # Try to delete an user that does not exists.
+
+    # DB connection.
+    await build_db_client()
+
+    # Execute login.
+    login_response = await admin_login()
+
+    # Endpoint test.
+    async with AsyncClient(app=fastapi_app, base_url=BASE_URL) as ac:
+        response = await ac.put(
+            f"/user/username/missing",
+            headers={
+                "Authorization": f"{login_response.token_type} {login_response.access_token}"
+            },
+        )
+
+    assert response.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_delete_last_admin():
+
+    # DB connection.
+    await build_db_client()
+
+    # Execute login.
+    login_response = await user_login()
+
+    # Endpoint test.
+    async with AsyncClient(app=fastapi_app, base_url=BASE_URL) as ac:
+        response = await ac.put(
+            f"/user/username/missing",
+            headers={
+                "Authorization": f"{login_response.token_type} {login_response.access_token}"
+            },
+        )
+
+    assert response.status_code == 406
