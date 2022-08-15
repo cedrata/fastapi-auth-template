@@ -494,6 +494,7 @@ async def put_user_by_username(
     to_update.email = updated_user.email
     to_update.username = updated_user.username
     to_update.roles = updated_user.roles
+    to_update.last_update = datetime.utcnow()
 
     try:
         await to_update.save()
