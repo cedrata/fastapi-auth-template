@@ -429,7 +429,7 @@ async def test_get_current_user():
 
 
 @pytest.mark.asyncio
-async def update_user():
+async def test_update_user():
 
     # DB connection.
     await build_db_client()
@@ -438,7 +438,7 @@ async def update_user():
     login_response = await user_login()
 
     async with AsyncClient(app=fastapi_app, base_url=BASE_URL) as ac:
-        response = ac.put(
+        response = await ac.put(
             f"/user/username/user",
             headers={
                 "Authorization": f"{login_response.token_type} {login_response.access_token}"
@@ -460,7 +460,7 @@ async def update_user():
 
 
 @pytest.mark.asyncio
-async def update_user_bad_user():
+async def test_update_user_bad_user():
 
     # DB connection.
     await build_db_client()
@@ -470,7 +470,7 @@ async def update_user_bad_user():
 
     # Endpoint test.
     async with AsyncClient(app=fastapi_app, base_url=BASE_URL) as ac:
-        response = ac.put(
+        response = await ac.put(
             f"/user/username/admin",
             headers={
                 "Authorization": f"{login_response.token_type} {login_response.access_token}"
@@ -486,7 +486,7 @@ async def update_user_bad_user():
 
 
 @pytest.mark.asyncio
-async def update_user_bad_roles():
+async def test_update_user_bad_roles():
 
     # DB connection.
     await build_db_client()
@@ -496,7 +496,7 @@ async def update_user_bad_roles():
 
     # Endpoint test.
     async with AsyncClient(app=fastapi_app, base_url=BASE_URL) as ac:
-        response = ac.put(
+        response = await ac.put(
             f"/user/username/admin",
             headers={
                 "Authorization": f"{login_response.token_type} {login_response.access_token}"
@@ -512,7 +512,7 @@ async def update_user_bad_roles():
 
 
 @pytest.mark.asyncio
-async def update_user_admin():
+async def test_update_user_admin():
 
     # DB connection.
     await build_db_client()
@@ -522,7 +522,7 @@ async def update_user_admin():
 
     # Endpoint test.
     async with AsyncClient(app=fastapi_app, base_url=BASE_URL) as ac:
-        response = ac.put(
+        response = await ac.put(
             f"/user/username/user",
             headers={
                 "Authorization": f"{login_response.token_type} {login_response.access_token}"
@@ -544,7 +544,7 @@ async def update_user_admin():
 
 
 @pytest.mark.asyncio
-async def update_user_admin_missing():
+async def test_update_user_admin_missing():
     # Try to update an user that does not exists.
 
     # DB connection.
@@ -555,7 +555,7 @@ async def update_user_admin_missing():
 
     # Endpoint test.
     async with AsyncClient(app=fastapi_app, base_url=BASE_URL) as ac:
-        response = ac.put(
+        response = await ac.put(
             f"/user/username/missing",
             headers={
                 "Authorization": f"{login_response.token_type} {login_response.access_token}"
@@ -571,7 +571,7 @@ async def update_user_admin_missing():
 
 
 @pytest.mark.asyncio
-async def update_user_duplicate_uername_or_email():
+async def test_update_user_duplicate_uername_or_email():
 
     # DB connection.
     await build_db_client()
@@ -581,7 +581,7 @@ async def update_user_duplicate_uername_or_email():
 
     # Endpoint test.
     async with AsyncClient(app=fastapi_app, base_url=BASE_URL) as ac:
-        response = ac.put(
+        response = await ac.put(
             f"/user/username/missing",
             headers={
                 "Authorization": f"{login_response.token_type} {login_response.access_token}"
