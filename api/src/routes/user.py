@@ -18,6 +18,7 @@ from src.db.collections.user import User as UserCollection
 from src.helpers.container import CONTAINER
 from src.models.commons import BaseMessage, HttpExceptionMessage
 from src.models.user import (
+    CurrentUserDetails,
     Role,
     UserPartialDetails,
     UserPartialDetailsAdmin,
@@ -388,7 +389,7 @@ async def get_user_by_username(
 
 
 _GET_CURRENT_USER_PARAMS: Final[Dict[Endpoint, Any]] = {
-    Endpoint.RESPONSE_MODEL: List[UserPartialDetails | UserPartialDetailsAdmin],
+    Endpoint.RESPONSE_MODEL: CurrentUserDetails,
     Endpoint.RESPONSES: {
         status.HTTP_401_UNAUTHORIZED: {
             "model": HttpExceptionMessage,
@@ -411,7 +412,6 @@ _GET_CURRENT_USER_PARAMS: Final[Dict[Endpoint, Any]] = {
 )
 async def get_current_user(
     is_authorized_result: Tuple[bool, dict] = Depends(is_authorized),
-    token: str = Depends(OAUTH2_SCHEME),
 ):
 
     # Check if the user is authorized or not.
@@ -422,7 +422,5 @@ async def get_current_user(
         )
 
     # Decoded token is in is_authorized_result[1]
+    return await UserCollection.find_one(UserCollection.username == is_authorized_result[1]["username"]).project(CurrentUserDetails)
 
-    response = UserCollection.find_one()
-
-    raise HTTPException(status.HTTP_501_NOT_IMPLEMENTED)
