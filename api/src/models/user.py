@@ -92,3 +92,9 @@ class CurrentUserDetails(BaseUser, BaseUserRoles):
 
     creation: datetime
     last_update: datetime
+
+
+class UpdateUserDetails(BaseUser, BaseUserRoles):
+    """Class for updating an user."""
+
+    pass

@@ -20,6 +20,7 @@ from src.models.commons import BaseMessage, HttpExceptionMessage
 from src.models.user import (
     CurrentUserDetails,
     Role,
+    UpdateUserDetails,
     UserPartialDetails,
     UserPartialDetailsAdmin,
     UserRegistration,
@@ -445,6 +446,10 @@ _PUT_USER_BY_USERNAME_PARAMS: Final[Dict[Endpoint, Any]] = {
             "model": HttpExceptionMessage,
             "description": "The user to update was not found",
         },
+        status.HTTP_409_CONFLICT: {
+            "model": HttpExceptionMessage,
+            "description": "The username or email are already in use by another user.",
+        },
         status.HTTP_500_INTERNAL_SERVER_ERROR: {
             "model": HttpExceptionMessage,
             "description": "An unknown error occured while retriving the user",
@@ -460,5 +465,5 @@ _PUT_USER_BY_USERNAME_PARAMS: Final[Dict[Endpoint, Any]] = {
     responses=_PUT_USER_BY_USERNAME_PARAMS[Endpoint.RESPONSE_MODEL],
     description=_PUT_USER_BY_USERNAME_PARAMS[Endpoint.RESPONSES],
 )
-async def put_user_by_username():
+async def put_user_by_username(updated_user: UpdateUserDetails, is_admin_result: Tuple[bool, bool, dict] = Depends(is_admin)):
     raise HTTPException(status.HTTP_501_NOT_IMPLEMENTED)
