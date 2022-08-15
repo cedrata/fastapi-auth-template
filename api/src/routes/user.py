@@ -470,4 +470,42 @@ async def put_user_by_username(
     updated_user: UpdateUserDetails,
     is_admin_result: Tuple[bool, bool, dict] = Depends(is_admin),
 ):
-    raise HTTPException(status.HTTP_501_NOT_IMPLEMENTED)
+
+    logger = CONTAINER.get(ILogger)
+
+    # Check if user is authorized.
+    if not is_admin_result[0]:
+        logger.info("routes", "The user is not authenticated.")
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED)
+
+    # Check if user is not admin that the user in the decoded token is equal to the given one in the endpoint path.
+    if not is_admin_result[1] and username != is_admin_result[2]["username"]:
+        logger.info("routes", "The user has not right to update a different user.")
+        raise HTTPException(status.HTTP_403_FORBIDDEN)
+
+    to_update = await UserCollection.find_one(UserCollection.username == username)
+
+    if to_update is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND)
+
+    to_update.email = updated_user.email
+    to_update.username = updated_user.username
+    to_update.roles = updated_user.roles
+
+    try:
+        await to_update.save()
+    except DuplicateKeyError as e:
+        logger.error("routes", str(e))
+        duplicates = dict(e.details).get("keyPattern")
+        msg = f"The following fields must be unique: {duplicates}"
+        raise HTTPException(status.HTTP_409_CONFLICT, detail=msg)
+    except Exception as e:
+        logger.error("routes", str(e))
+        msg = f"An unknown exception occured, maybe bad db connection"
+        raise HTTPException(
+            status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
+    logger.info("routes", f"Succesful update for {username} to {updated_user.json()}")
+
+    return JSONResponse(status.HTTP_200_OK)
