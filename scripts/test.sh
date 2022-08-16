@@ -28,7 +28,7 @@ if [ "$#" -lt 1 ]; then
 fi
 
 # Making sure the arguments are absolute paths.
-if [ ! "$1" = /* ]; then
+if [[ ! "$1" = /* ]]; then
     echo -e "${RED}The module-directory path must be absolute."
     echo "Interrupting."
     exit -1
