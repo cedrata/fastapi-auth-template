@@ -54,7 +54,6 @@ semver==2.13.0
 six==1.16.0
 sniffio==1.2.0
 sortedcontainers==2.4.0
--e git+ssh://git@github.com/cedrata/fastapi-auth-template.git@bc6912b5a51341b213cce674d8e8d71c159abdec#egg=src
 starlette==0.19.1
 toml==0.10.2
 tomli==2.0.1

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ################################################################################
-# This script will run the setup to prepare the develpment environment, and 
+# This script will run the setup to prepare the develpment environment, and
 # export them.
 # Currently this script runs under MacOS and Ubuntu-like distros (of course wsl
 # ubuntu too :)).
@@ -26,15 +26,23 @@ fi
 
 # Making sure the arguments are absolute paths.
 if [[ ! "$1" = /* ]]; then
-    echo -e "${RED}The configs directory path must be absolute or does not exists."
+    echo -e "${RED}The configs directory path must be absolute."
+    echo "Interrupting."
+    exit -1
+elif [ ! -d "$1" ]; then
+    echo -e "${RED}The configs directory path does not exists."
     echo "Interrupting."
     exit -1
 elif [[ ! "$2" = /* ]]; then
-    echo -e "${RED}The logging directory must be absolute or does not exists."
+    echo -e "${RED}The logging directory path must be absolute."
+    echo "Interrupting."
+    exit -1
+elif [ ! -d "$2" ]; then
+    echo -e "${RED}The logging directory path does not exists."
     echo "Interrupting."
     exit -1
 elif [[ ! "$3" = /* ]]; then
-    echo -e "${RED}The dotenv path must be absolute or does not exists."
+    echo -e "${RED}The dotenv file path must be absolute."
     echo "Interrupting."
     exit -1
 fi
@@ -70,11 +78,42 @@ echo -e "${GREEN}Dicrectories validated with success."
 echo -e "${DEFAULT_COLOUR}"
 
 ################################################################################
+# DB connection setup.
+echo "Insert DB connection username:: "
+read DB_USERNAME
+
+echo "Insert DB connection password:: "
+read DB_PASSWORD
+
+echo "Insert DB connection host:: "
+read DB_HOST
+
+echo "Insert DB connection port:: "
+read DB_PORT
+
+echo "Insert DB name:: "
+read DB_NAME
+
+################################################################################
+# .env printing.
+
+# Generating the env folder if not exists.
+if [ ! -e "$(dirname $3)" ]; then
+    echo -e "${ORANGE}$(dirname $3) does not exist, creating..."
+    mkdir -p $(dirname $3)
+    echo -e "${DEFAULT_COLOR}Success, moving on..."
+fi
+
 # Printing variables to .env file.
 echo "Printing required environement variables to $(pwd)/.env file..."
-echo "SECRET_KEY=${SECRET_KEY}" > $DOTENV
-echo "CONFIGS_DIR=${CONFIGS_DIR}" >> $DOTENV
-echo "LOGGING_DIR=${LOGGING_DIR}" >> $DOTENV
+echo "SECRET_KEY=${SECRET_KEY}" >$DOTENV
+echo "CONFIGS_DIR=${CONFIGS_DIR}" >>$DOTENV
+echo "LOGGING_DIR=${LOGGING_DIR}" >>$DOTENV
+echo "DB_USERNAME=${DB_USERNAME}" >>$DOTENV
+echo "DB_PASSWORD=${DB_PASSWORD}" >>$DOTENV
+echo "DB_HOST=${DB_HOST}" >>$DOTENV
+echo "DB_PORT=${DB_PORT}" >>$DOTENV
+echo "DB_NAME=${DB_NAME}" >>$DOTENV
 echo -e "${GREEN}$DOTENV file created succesfully."
 
 echo -e "${GREEN}Success, you're ready to work :)"
