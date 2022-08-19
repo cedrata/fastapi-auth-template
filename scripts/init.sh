@@ -18,63 +18,83 @@ ORANGE='\033[33;33m'
 ################################################################################
 # Reading input arguments.
 # Making sure the number read arguments is correct.
-if [ "$#" -lt 3 ]; then
-    echo -e "${ORANGE}Usage: env.sh <configs-dir-absolute-path> <logging-dir-absolute-path> <dotenv-absolute-path>${NC}"
+if [ "$#" -ne 1 -a "$#" -ne 3 ]; then
+    echo "To generate a local development .env file simply type::"
+    echo -e "${ORANGE}Usage: init.sh <configs-dir-absolute-path> <logging-dir-absolute-path> <dotenv-absolute-path>${NC}"
+    echo 
+    echo "To generate a container .env file type instead::"
+    echo -e "${ORANGE}Usage: init.sh <dotenv-absolute-path>${NC}"
+    echo
     echo "Interrupting."
     exit -1
 fi
 
 # Making sure the arguments are absolute paths.
-if [[ ! "$1" = /* ]]; then
-    echo -e "${RED}The configs directory path must be absolute.${NC}"
-    echo "Interrupting."
-    exit -1
-elif [ ! -d "$1" ]; then
-    echo -e "${RED}The configs directory path does not exists.${NC}"
-    echo "Interrupting."
-    exit -1
-elif [[ ! "$2" = /* ]]; then
-    echo -e "${RED}The logging directory path must be absolute.${NC}"
-    echo "Interrupting."
-    exit -1
-elif [ ! -d "$2" ]; then
-    echo -e "${RED}The logging directory path does not exists.${NC}"
-    echo "Interrupting."
-    exit -1
-elif [[ ! "$3" = /* ]]; then
-    echo -e "${RED}The dotenv file path must be absolute.${NC}"
-    echo "Interrupting."
-    exit -1
+if [ "$#" -eq 3 ]; then
+    if [[ ! "$1" = /* ]]; then
+        echo -e "${RED}The configs directory path must be absolute.${NC}"
+        echo "Interrupting."
+        exit -1
+    elif [ ! -d "$1" ]; then
+        echo -e "${RED}The configs directory path does not exists.${NC}"
+        echo "Interrupting."
+        exit -1
+    elif [[ ! "$2" = /* ]]; then
+        echo -e "${RED}The logging directory path must be absolute.${NC}"
+        echo "Interrupting."
+        exit -1
+    elif [ ! -d "$2" ]; then
+        echo -e "${RED}The logging directory path does not exists.${NC}"
+        echo "Interrupting."
+        exit -1
+    elif [[ ! "$3" = /* ]]; then
+        echo -e "${RED}The dotenv file path must be absolute.${NC}"
+        echo "Interrupting."
+        exit -1
+    fi
+
+    # if the validation is passed initialize all the variables.
+    CONFIGS_DIR=$1
+    LOGGING_DIR=$2
+    DOTENV=$3
+    DB_DEFAULT_HOST="localhost"
+else
+    if [[ ! "$1" = /* ]]; then
+        echo -e "${RED}The dotenv file path must be absolute.${NC}"
+        echo "Interrupting."
+        exit -1
+    fi
+
+    CONFIGS_DIR="/app/configs"
+    LOGGING_DIR="/app/logs"
+    DOTENV=$1
+    DB_DEFAULT_HOST="host.docker.internal"
 fi
 
 ################################################################################
 # Variables initiaization.
 
-# if the validation is passed initialize all the variables.
-CONFIGS_DIR=$1
-LOGGING_DIR=$2
-DOTENV=$3
-
-# Differnt variables from input arguments.
 SECRET_KEY=$(openssl rand -hex 32)
 echo "Initializing workspace..."
 
 ################################################################################
 # Dicrectories check.
-echo "Check if logging directory is already present..."
-if [ ! -d $LOGGING_DIR ]; then
-    mkdir $LOGGING_DIR
-    echo -e "${GREEN}Loggin directory was missing, generated with success.${NC}"
-else
-    echo "Loggin directory already existing, moving on..."
-fi
+if [ "$#" -eq 3 ]; then
+    echo "Check if logging directory is already present..."
+    if [ ! -d $LOGGING_DIR ]; then
+        mkdir $LOGGING_DIR
+        echo -e "${GREEN}Loggin directory was missing, generated with success.${NC}"
+    else
+        echo "Loggin directory already existing, moving on..."
+    fi
 
-if [ ! -d $CONFIGS_DIR ]; then
-    echo -e "${ORANGE}The $CONFIGS_DIR is missing, create it or check the name is typed correctly...${NC}"
-else
-    echo "Configuration directory existing, moving on..."
+    if [ ! -d $CONFIGS_DIR ]; then
+        echo -e "${ORANGE}The $CONFIGS_DIR is missing, create it or check the name is typed correctly...${NC}"
+    else
+        echo "Configuration directory existing, moving on..."
+    fi
+    echo -e "${GREEN}Dicrectories validated with success.${NC}"
 fi
-echo -e "${GREEN}Dicrectories validated with success.${NC}"
 
 ################################################################################
 # DB connection setup.
@@ -84,8 +104,11 @@ read DB_USERNAME
 echo "Insert DB connection password:: "
 read DB_PASSWORD
 
-echo "Insert DB connection host:: "
+echo "Insert DB connection host:: (press enter to default to $DB_DEFAULT_HOST)"
 read DB_HOST
+if [[ DB_HOST = "" ]]; then
+    DB_HOST=DB_DEFAULT_HOST
+fi
 
 echo "Insert DB connection port:: "
 read DB_PORT
@@ -97,14 +120,14 @@ read DB_NAME
 # .env printing.
 
 # Generating the env folder if not exists.
-if [ ! -e "$(dirname $3)" ]; then
-    echo -e "${ORANGE}$(dirname $3) does not exist, creating...${NC}"
-    mkdir -p $(dirname $3)
+if [ ! -e "$(dirname $DOTENV)" ]; then
+    echo -e "${ORANGE}$(dirname $DOTENV) does not exist, creating...${NC}"
+    mkdir -p $(dirname $DOTENV)
     echo -e "Success, moving on..."
 fi
 
 # Printing variables to .env file.
-echo "Printing required environement variables to $(pwd)/.env file..."
+echo "Printing required environement variables to $(pwd)/$DOTENV file..."
 echo "SECRET_KEY=${SECRET_KEY}" >$DOTENV
 echo "CONFIGS_DIR=${CONFIGS_DIR}" >>$DOTENV
 echo "LOGGING_DIR=${LOGGING_DIR}" >>$DOTENV
