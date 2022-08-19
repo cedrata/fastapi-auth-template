@@ -3,6 +3,7 @@ This project is a FastAPI REST API template with authentication and authorizatio
 
 # General informations
 In this sections the general informations about the project are presented.
+To execute local developement simply follow the following steps, if you prefer develop within a container/docker compose follow [this section](#docker)
 
 ## Scripts
 Some scripts are available in the ```scripts/``` directory they have different purposes:
