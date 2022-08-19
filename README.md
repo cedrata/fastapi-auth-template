@@ -3,6 +3,7 @@ This project is a FastAPI REST API template with authentication and authorizatio
 
 # General informations
 In this sections the general informations about the project are presented.
+To execute local developement simply follow the following steps, if you prefer develop within a container/docker compose follow [this section](#docker)
 
 ## Scripts
 Some scripts are available in the ```scripts/``` directory they have different purposes:
@@ -54,3 +55,14 @@ This will install locally the ```src``` module inside the ```api``` directory.
 which will make the script executable and then perform the action described at [this section](#scripts).
 
 To then execute the tests you can either run them from you IDE (VsCode in my case) or terminal with ```pytest --envfile=$(pwd)/env/.test.env``` this flag exists because of the ```pytest-dotenv``` plugin for pytest present in the requirements.txt file.
+
+## Docker
+A developement container is available in ```Docker``` folder. First build the image as follow from the repository root folder ```$ docker build -f ./Docker/Dockerfile.dev . -t fastapi_auth_template_api:0.0.0-dev```. After that you can run it by typing ```$ docker run --name fastapi_auth_template_api-0.0.0-dev -v $(pwd)/api/src:/app/src -v $(pwd)/configs:/app/configs -p 8000:8000 --env-file ./env/.container.dev.env --add-host=host.docker.internal:host-gateway -id fastapi_auth_template_api:0.0.0-dev```.
+
+Before doing that two things are required:
+- Having installed a MongoDB server instance (I installed mine usign a mongo docker image)
+- Generate a new .env file, and following the convention I decided when starting this repository the name I choosed is ```.container.dev.env```.
+
+To generate the .env file simply type in the shell ```$ ./scripts/init.sh container .container.dev.env``` this will tell the script that you want to generate a new .env file for a container, and by doing so the configs and log directory are setted by default, other than that the suggested db host will be ```host.docker.internal``` if you are using a db server installed on your machine (like a docker image of MongoDB).
+
+This container can be launched alone by it self, but we suggest to run it with docker compose (coming soon).
