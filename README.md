@@ -57,7 +57,7 @@ which will make the script executable and then perform the action described at [
 To then execute the tests you can either run them from you IDE (VsCode in my case) or terminal with ```pytest --envfile=$(pwd)/env/.test.env``` this flag exists because of the ```pytest-dotenv``` plugin for pytest present in the requirements.txt file.
 
 ## Docker
-A developement container is available in ```Docker``` folder. First build the image as follow from the repository root folder ```$ docker build -f ./Docker/Dockerfile.dev . -t fastapi_auth_template_api:0.0.0-dev```. After that you can run it by typing ```$ docker run --name fastapi_auth_template_api:0.0.0-dev -v $(pwd)/api/src:/app/src -v $(pwd)/configs:/app/configs -p 8000:8000 --env-file ./env/.container.dev.env --add-host=host.docker.internal:host-gateway -id fastapi_auth_template_api:0.0.0-dev```.
+A developement container is available in ```Docker``` folder. First build the image as follow from the repository root folder ```$ docker build -f ./Docker/Dockerfile.dev . -t fastapi_auth_template_api:0.0.0-dev```. After that you can run it by typing ```$ docker run --name fastapi_auth_template_api-0.0.0-dev -v $(pwd)/api/src:/app/src -v $(pwd)/configs:/app/configs -p 8000:8000 --env-file ./env/.container.dev.env --add-host=host.docker.internal:host-gateway -id fastapi_auth_template_api:0.0.0-dev```.
 
 Before doing that two things are required:
 - Having installed a MongoDB server instance (I installed mine usign a mongo docker image)
