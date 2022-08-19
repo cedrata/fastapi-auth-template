@@ -106,8 +106,8 @@ read DB_PASSWORD
 
 echo "Insert DB connection host:: (press enter to default to $DB_DEFAULT_HOST)"
 read DB_HOST
-if [[ DB_HOST = "" ]]; then
-    DB_HOST=DB_DEFAULT_HOST
+if [ -z $DB_HOST ]; then
+    DB_HOST=$DB_DEFAULT_HOST
 fi
 
 echo "Insert DB connection port:: "
