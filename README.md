@@ -1,9 +1,14 @@
 # FastAPI auth template
 This project is a FastAPI REST API template with authentication and authorization. This API is using a MongoDB instance to store and retrive data.
+All of this exists as a personal documentation, to help me in the future to do similar things, I hope it can help someone else too. For this reason I decided that if you want to support me on the development of this repository and maybe future projects you can now donate with ko-fi just by clicking the following button.
+
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/E1E5E3EKB)
+
+Thank you to everyone that will decide to support this and other projects <3
 
 # General informations
 In this sections the general informations about the project are presented.
-To execute local developement simply follow the following steps, if you prefer develop within a container/docker compose follow [this section](#docker)
+To execute local developement simply follow the ahead steps, if you prefer develop within a container or docker compose(at the moment is not available) follow [this section](#docker)
 
 ## Scripts
 Some scripts are available in the ```scripts/``` directory they have different purposes:
@@ -66,3 +71,5 @@ Before doing that two things are required:
 To generate the .env file simply type in the shell ```$ ./scripts/init.sh container .container.dev.env``` this will tell the script that you want to generate a new .env file for a container, and by doing so the configs and log directory are setted by default, other than that the suggested db host will be ```host.docker.internal``` if you are using a db server installed on your machine (like a docker image of MongoDB).
 
 This container can be launched alone by it self, but we suggest to run it with docker compose (coming soon).
+
+I personally still use python virtual environements even with this developement technique, and i like to use pyenv combined with pyenv-virtualenv, because tests are not containerized yet and sometimes i find useful to have typing hints. Soon the containerization of the whole repository will come to have a better development environement to be able to run it inside visual studio code remote container development extension, just be patient and it will come :D.
