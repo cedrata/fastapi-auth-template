@@ -10,6 +10,9 @@ Thank you to everyone that will decide to support this and other projects <3
 In this sections the general informations about the project are presented.
 To execute local developement simply follow the ahead steps, if you prefer develop within a container or docker compose(at the moment is not available) follow [this section](#docker)
 
+# Local development
+The following steps are used to prepare a local development environment, if you want to use docker to launch or develop [those steps](#docker) can be followed.
+
 ## Scripts
 Some scripts are available in the ```scripts/``` directory they have different purposes:
 - ```freeze.sh``` will execute the ```pip freeze``` command but excluding local modules generated with ```test.sh```.
@@ -50,18 +53,18 @@ Otherwise if you're using VsCode (I know it's not an IDE but a text editor reall
 
 by doing so yow will be able to run and insert debug points into the application and debug it visually.
 
+*TO RUN THE API WITH VSCODE IN THIS WAY YOU HAVE TO FOLLOW THE STEPS OF THE [Testing](#testing) section to build the module locally.*
+
 ## Testing
 To run the available unit tests inside ```$(pwd)/tests/``` run from your shell:
-```
-    $ chmod 777 ./scripts/test.sh && ./scripts/test.sh $(pwd)
-```
+```$ chmod 777 ./scripts/test.sh && ./scripts/test.sh $(pwd)```.
 This will install locally the ```src``` module inside the ```api``` directory.
 
 which will make the script executable and then perform the action described at [this section](#scripts).
 
 To then execute the tests you can either run them from you IDE (VsCode in my case) or terminal with ```pytest --envfile=$(pwd)/env/.test.env``` this flag exists because of the ```pytest-dotenv``` plugin for pytest present in the requirements.txt file.
 
-## Docker
+# Docker
 A developement container is available in ```Docker``` folder. First build the image as follow from the repository root folder ```$ docker build -f ./Docker/Dockerfile.dev . -t fastapi_auth_template_api:0.0.0-dev```. After that you can run it by typing ```$ docker run --name fastapi_auth_template_api-0.0.0-dev -v $(pwd)/api/src:/app/src -v $(pwd)/configs:/app/configs -p 8000:8000 --env-file ./env/.container.dev.env --add-host=host.docker.internal:host-gateway -id fastapi_auth_template_api:0.0.0-dev```.
 
 Before doing that two things are required:
@@ -70,6 +73,9 @@ Before doing that two things are required:
 
 To generate the .env file simply type in the shell ```$ ./scripts/init.sh container .container.dev.env``` this will tell the script that you want to generate a new .env file for a container, and by doing so the configs and log directory are setted by default, other than that the suggested db host will be ```host.docker.internal``` if you are using a db server installed on your machine (like a docker image of MongoDB).
 
-This container can be launched alone by it self, but we suggest to run it with docker compose (coming soon).
+This container can be launched alone by it self, but we suggest to run it with docker compose when testing a complete application e.g. FE+BE+DB(coming soon).
 
-I personally still use python virtual environements even with this developement technique, and i like to use pyenv combined with pyenv-virtualenv, because tests are not containerized yet and sometimes i find useful to have typing hints. Soon the containerization of the whole repository will come to have a better development environement to be able to run it inside visual studio code remote container development extension, just be patient and it will come :D.
+VSCode provide an extension ```Remote - Containers``` which will help build development containers, simply open the command palette and search for ```Open folder in container``` if is your first time creating one, otherwise if you already have a container search for ```Attach to running container```. This will generate a container container where you will be able to follo the [local development](#local-development) steps to configure the environment. A good thing of this extension is that the github repository is mounted as a volume, so the code will be modified directly on your machine and you will not need to do strange steps to sync the code in the container and your machine.
+
+# Notes
+I presonally use pyenv combined with pyenv-virtualenv when developing in a local environement, outside of a container (if this can help someone), but now my workflow will be replaced with the container development thantks to Visual Studio Code, if you are using a different IDE/Text Editor and you want to contribute adding documentation for it don't hesitate to contact me and send me you workflow to integrate in here :smile:.

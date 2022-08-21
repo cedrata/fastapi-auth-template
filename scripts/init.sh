@@ -15,6 +15,10 @@ RED='\033[33;31m'
 GREEN='\033[33;32m'
 ORANGE='\033[33;33m'
 
+# Useful variables.
+LOCALHOST="localhost"
+DOCKER_INTERNAL="host.docker.internal"
+
 ################################################################################
 # Reading input arguments.
 # Making sure the number read arguments is correct.
@@ -57,7 +61,7 @@ if [ "$#" -eq 3 ]; then
     CONFIGS_DIR=$1
     LOGGING_DIR=$2
     DOTENV=$3
-    DB_DEFAULT_HOST="localhost"
+    DB_DEFAULT_HOST=$LOCALHOST
 else
     if [[ ! "$1" = /* ]]; then
         echo -e "${RED}The dotenv file path must be absolute.${NC}"
@@ -68,7 +72,7 @@ else
     CONFIGS_DIR="/app/configs"
     LOGGING_DIR="/app/logs"
     DOTENV=$1
-    DB_DEFAULT_HOST="host.docker.internal"
+    DB_DEFAULT_HOST=$DOCKER_INTERNAL
 fi
 
 ################################################################################
@@ -104,11 +108,15 @@ read DB_USERNAME
 echo "Insert DB connection password:: "
 read DB_PASSWORD
 
-echo "Insert DB connection host:: (press enter to default to $DB_DEFAULT_HOST)"
+echo "If you are running the code on you local machine and talking with a DB on you local machine simply type $LOCALHOST"
+echo "If you are running the code inside a container and talking with a DB on your local machine simly type $DOCKER_INTERNAL"
+echo "If you are running the code with a docker docker compose simply type the name of the DB service in the docker compose as host"
+echo "If you are running the code connecting it with a remode DB simply type the host of the remote server..."
+echo "Insert DB connection host::"
 read DB_HOST
-if [ -z $DB_HOST ]; then
-    DB_HOST=$DB_DEFAULT_HOST
-fi
+# if [ -z $DB_HOST ]; then
+#     DB_HOST=$DB_DEFAULT_HOST
+# fi
 
 echo "Insert DB connection port:: "
 read DB_PORT
